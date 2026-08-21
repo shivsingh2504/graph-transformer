@@ -8,10 +8,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import pytest
 
-from src.data.graph_generator import Graph, generate_random_connected_graph
-from src.data.dijkstra import ShortestPath, run_dijkstra
-from src.data.dataset_generator import DatasetSplit, generate_dataset_split
-
+from data.graph_generator import Graph, generate_random_connected_graph
+from data.dijkstra import ShortestPath, run_dijkstra
+from data.dataset_generator import DatasetSplit, generate_dataset_split
 
 def _path_edges_valid(graph: Graph, path: List[int]) -> bool:
     adj = graph.adjacency()
