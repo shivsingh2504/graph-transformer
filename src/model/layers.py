@@ -116,3 +116,23 @@ class PositionwiseFeedForward(nn.Module):
 
   def forward(self, x: torch.Tensor) -> torch.Tensor:
       return self.linear2(self.dropout(F.gelu(self.linear1(x))))
+    
+class TokenEmbedding(nn.Module):
+  def __init__(
+    self,
+    vocab_size: int,
+    d_model: int = _D_MODEL,
+    max_len: int = 5000,
+    dropout: float = 0.1,
+  ) -> None:
+      super().__init__()
+      self.d_model = d_model
+      self.scale = math.sqrt(d_model)
+      self.embedding = nn.Embedding(vocab_size, d_model)
+      self.pos_encoding = PositionalEncoding(
+        d_model=d_model, max_len=max_len, dropout=dropout
+      )
+
+  def forward(self, x: torch.Tensor) -> torch.Tensor:
+      embedded = self.embedding(x) * self.scale
+      return self.pos_encoding(embedded)
