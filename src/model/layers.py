@@ -100,3 +100,19 @@ class MultiHeadAttention(nn.Module):
     if return_attn_weights:
       return out, attn_weights
     return out
+  
+  
+class PositionwiseFeedForward(nn.Module):
+  def __init__(
+    self,
+    d_model: int = _D_MODEL,
+    d_ff: int = _D_FF,
+    dropout: float = 0.1,
+  ) -> None:
+      super().__init__()
+      self.linear1 = nn.Linear(d_model, d_ff)
+      self.linear2 = nn.Linear(d_ff, d_model)
+      self.dropout = nn.Dropout(p=dropout)
+
+  def forward(self, x: torch.Tensor) -> torch.Tensor:
+      return self.linear2(self.dropout(F.gelu(self.linear1(x))))
