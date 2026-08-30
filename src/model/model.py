@@ -9,3 +9,32 @@ _N_HEADS : int  = 4
 _N_LAYERS : int  = 3
 _D_FF : int = 512
 _DROPOUT : float = 0.1
+
+class EncoderLayer(nn.Module):
+  def __init__(
+    self,
+    d_model : int = _D_MODEL,
+    n_heads : int = _N_HEADS,
+    d_ff : int = _D_FF,
+    dropout : float = _DROPOUT
+  ):
+    super().__init__()
+    self.self_attn = MultiHeadAttention(d_model=d_model,dropout=dropout,n_heads=n_heads)
+    self.ffn = PositionwiseFeedForward(dropout=dropout,d_model=d_model,d_ff=d_ff)
+    self.norm1 = nn.LayerNorm(d_model)
+    self.norm2 = nn.LayerNorm(d_model)
+    self.norm3 = nn.LayerNorm(d_model)
+    self.dropout = nn.Dropout(p=dropout)
+    def forward(
+      self,
+      x : torch.Tensor,
+      encoder_output : torch.Tensor,
+      self_attn_mask : Optional[torch.Tensor] = None,
+      cross_attn_mask : Optional[torch.Tensor] = None
+    ):
+      x = self.norm1(x + self.dropout(self.self_attn(x,x,x,mask=self_attn_mask)))
+      x = self.norm2(x + self.dropout(self.cross_attn(x,encoder_output,encoder_output,mask = cross_attn_mask)))
+      x = self.norm3(x + self.dropout(self.ffn(x)))
+      return x
+  
+    
