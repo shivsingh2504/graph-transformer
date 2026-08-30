@@ -11,7 +11,7 @@ _D_FF: int = 512
 def create_padding_mask(seq:torch.Tensor,pad_token_id:int)->torch.Tensor:
   mask = (seq != pad_token_id)
   return mask.unsqueeze(1).unsqueeze(2)
-def create_casual_mask(seq_len:int,device:torch.device = torch.device("cpu"))->torch.Tensor:
+def create_causal_mask(seq_len:int,device:torch.device = torch.device("cpu"))->torch.Tensor:
   mask = torch.tril(torch.ones(seq_len,seq_len,dtype=torch.bool,device=device))
   return mask.unsqueeze(0).unsqueeze(0)
 
@@ -20,7 +20,7 @@ class PositionalEncoding(nn.Module):
     self,
     d_model:int = _D_MODEL,
     max_len:int = 5000,
-    dropout : float = 0.1
+    dropout : float = 0.0
     
   )->None:
     super().__init__()
@@ -44,7 +44,7 @@ class MultiHeadAttention(nn.Module):
     self,
     d_model:int = _D_MODEL,
     n_heads: int = _N_HEADS,
-    dropout : float = 0.1
+    dropout : float = 0.0
   )->None:
     super().__init__()
     assert d_model % n_heads == 0, (
@@ -54,6 +54,7 @@ class MultiHeadAttention(nn.Module):
     self.n_heads = n_heads
     self.d_head = d_model // n_heads
     self.scale = math.sqrt(self.d_head)
+    self.dropout = nn.Dropout(p=dropout)
     
     self.W_q = nn.Linear(d_model, d_model, bias=False)
     self.W_k = nn.Linear(d_model, d_model, bias=False)
@@ -107,7 +108,7 @@ class PositionwiseFeedForward(nn.Module):
     self,
     d_model: int = _D_MODEL,
     d_ff: int = _D_FF,
-    dropout: float = 0.1,
+    dropout: float = 0.0,
   ) -> None:
       super().__init__()
       self.linear1 = nn.Linear(d_model, d_ff)
@@ -115,7 +116,7 @@ class PositionwiseFeedForward(nn.Module):
       self.dropout = nn.Dropout(p=dropout)
 
   def forward(self, x: torch.Tensor) -> torch.Tensor:
-      return self.linear2(self.dropout(F.gelu(self.linear1(x))))
+      return self.linear2(self.dropout(F.relu(self.linear1(x))))
     
 class TokenEmbedding(nn.Module):
   def __init__(
@@ -123,7 +124,7 @@ class TokenEmbedding(nn.Module):
     vocab_size: int,
     d_model: int = _D_MODEL,
     max_len: int = 5000,
-    dropout: float = 0.1,
+    dropout: float = 0.0,
   ) -> None:
       super().__init__()
       self.d_model = d_model
