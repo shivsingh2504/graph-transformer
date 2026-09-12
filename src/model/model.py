@@ -76,7 +76,7 @@ class Encoder(nn.Module):
     d_ff : int = _D_FF,
     dropout : float = _DROPOUT
   )->None:
-    super.__init__()
+    super().__init__()
     self.embedding = TokenEmbedding(
       vocab_size=vocab_size,d_model=d_model,dropout=dropout
     )
@@ -92,5 +92,35 @@ class Encoder(nn.Module):
     x = self.embedding(src_ids)
     for layer  in self.layers:
       x = layer(x,mask= src_mask)
+    return x
+
+class Decoder(nn.Module):
+  def __init__(
+    self,
+    vocab_size  :int,
+    n_layers : int = _N_LAYERS,
+    n_heads  : int = _N_HEADS,
+    d_ff : int = _D_FF,
+    d_model  : int = _D_MODEL,
+    dropout : float = _DROPOUT
+  )->None:
+    super().__init__()
+    self.embedding = TokenEmbedding(
+      vocab_size=vocab_size,dropout=dropout,d_model=d_model
+    )
+    self.layers = nn.ModuleList([
+      DecoderLayer(d_model=d_model,d_ff=d_ff,droput=dropout,n_heads=n_heads)
+      for _ in range(n_layers)
+    ])
+  def forward(
+    self,
+    tgt_ids : torch.Tensor,
+    encoder_output : torch.Tensor,
+    self_attn_mask : Optional[torch.Tensor]=None,
+    cross_attn_mask : Optional[torch.Tensor] = None
+  )->torch.Tensor:
+    x = self.embedding(tgt_ids)
+    for layer in self.layers:
+      x = layer(x,encoder_output,self_attn_mask,cross_attn_mask)
     return x
 
