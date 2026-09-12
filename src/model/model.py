@@ -65,3 +65,32 @@ class DecoderLayer(nn.Module):
     ))
     x = self.norm3(x + self.dropout(self.ffn(x)))
     return x
+  
+class Encoder(nn.Module):
+  def __init__(
+    self,
+    vocab_size : int,
+    n_layers : int = _N_LAYERS,
+    n_heads : int = _N_HEADS,
+    d_model : int = _D_MODEL,
+    d_ff : int = _D_FF,
+    dropout : float = _DROPOUT
+  )->None:
+    super.__init__()
+    self.embedding = TokenEmbedding(
+      vocab_size=vocab_size,d_model=d_model,dropout=dropout
+    )
+    self.layers = nn.ModuleList([
+      EncoderLayer(d_model=d_model,n_heads=n_heads,d_ff=d_ff,dropout=dropout)
+      for _ in range(n_layers)
+    ])
+  def forward(
+    self,
+    src_ids : torch.Tensor,
+    src_mask : Optional[torch.Tensor] = None,
+  )-> torch.Tensor:
+    x = self.embedding(src_ids)
+    for layer  in self.layers:
+      x = layer(x,mask= src_mask)
+    return x
+
