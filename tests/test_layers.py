@@ -339,6 +339,18 @@ class TestPositionwiseFeedForward:
         for pos in [0, 1, 3, 4]:
             assert torch.allclose(out[:, pos, :], out_mod[:, pos, :], atol=1e-6)
         assert not torch.allclose(out[:, 2, :], out_mod[:, 2, :])
+    def test_uses_relu_not_gelu(self) -> None:
+        ffn = PositionwiseFeedForward(d_model=8, d_ff=16, dropout=0.0)
+        ffn.eval()
+        with torch.no_grad():
+            ffn.linear1.weight.fill_(0.0)
+            ffn.linear1.bias.fill_(-1.0)
+            ffn.linear2.weight.fill_(1.0)
+            ffn.linear2.bias.fill_(0.0)
+        x = torch.zeros(1, 1, 8)
+        out = ffn(x)
+        assert torch.allclose(out, torch.zeros_like(out), atol=1e-6)
+    
 
 
 class TestTokenEmbedding:

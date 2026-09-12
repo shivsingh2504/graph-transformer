@@ -2,15 +2,17 @@
 import torch
 import torch.nn as nn
 import pytest
-
-from src.model.model import (
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+from model.model import (
     EncoderLayer,
     DecoderLayer,
     Encoder,
     Decoder,
     Transformer,
 )
-from src.model.layers import create_padding_mask, create_causal_mask
+from model.layers import create_padding_mask, create_causal_mask
 
 VOCAB_SIZE = 50
 PAD_ID = 0
