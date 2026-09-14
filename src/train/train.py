@@ -23,3 +23,10 @@ _LR: float = 1e-4
 _WEIGHT_DECAY : float = 1e-2
 _WARMUP_STEPS:int = 400
 _BATCH_SIZE: int = 32
+
+def _linear_warmup_schedule(step:int,warmup_steps:int)->float:
+  if warmup_steps <= 0:
+    return 1.0
+  if step < warmup_steps:
+    return float(step+1) / float(warmup_steps)
+  return 1.0
