@@ -344,3 +344,25 @@ class TestTrainingHistory:
             assert isinstance(loss, float)
             assert torch.isfinite(torch.tensor(loss)), f"Non-finite loss: {loss}"
 
+class TestCPUCompatibility:
+    def test_train_model_runs_on_explicit_cpu(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, val_split = tiny_splits
+        model, history = train_model(
+            train_split, val_split, tokenizer,
+            n_epochs=1, batch_size=4, lr=1e-3, warmup_steps=2,
+            n_layers=1, d_model=32, n_heads=4, d_ff=64, dropout=0.0,
+            device=torch.device("cpu"),
+        )
+        assert next(model.parameters()).device == torch.device("cpu")
+        assert len(history["train_loss"]) == 1
+
+    def test_dataloader_yields_cpu_tensors(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        loader = make_dataloader(train_split, tokenizer, batch_size=4, shuffle=False)
+        src, tgt = next(iter(loader))
+        assert src.device == torch.device("cpu")
+        assert tgt.device == torch.device("cpu")
