@@ -291,3 +291,22 @@ class TestParametersUpdate:
             "optimization is not working."
         )
 
+class TestValidationDoesNotUpdate:
+    def test_all_params_unchanged_after_val_epoch(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        _, val_split = tiny_splits
+        model = _tiny_model(tokenizer.vocab_size)
+        criterion = nn.CrossEntropyLoss(ignore_index=PAD_ID)
+
+        params_before = {
+            name: p.data.clone() for name, p in model.named_parameters()
+        }
+
+        loader = make_dataloader(val_split, tokenizer, batch_size=4, shuffle=False)
+        _val_epoch(model, loader, criterion, DEVICE)
+
+        for name, p in model.named_parameters():
+            assert torch.equal(params_before[name], p.data), (
+                f"Parameter '{name}' was modified during validation."
+            )
