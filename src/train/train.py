@@ -72,3 +72,17 @@ def make_dataloader(
     shuffle = shuffle,
     collate_fn = lambda batch: collate_fn(batch,tokenizer.pad_token_id),
   )
+
+def _make_masks(
+  src :torch.Tensor,
+  decoder_input:torch.Tensor,
+  pad_id : int,
+)->Tuple[torch.Tensor,torch.Tensor,torch.Tensor]:
+  device = src.device
+  tgt_len = decoder_input.size(1)
+  src_mask = create_padding_mask(src,pad_id)
+  tgt_pad_mask = create_padding_mask(decoder_input,pad_id)
+  causal_mask = create_causal_mask(tgt_len,device=device)
+  tgt_self_attn_mask = causal_mask & tgt_pad_mask
+  tgt_cross_attn_mask = src_mask
+  return src_mask,tgt_self_attn_mask,tgt_cross_attn_mask
