@@ -225,3 +225,50 @@ class TestCausalMaskPreventsLeakage:
             "a future decoder token was modified."
         )
 
+class TestOneTrainingStep:
+    def test_forward_produces_finite_logits(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        model = _tiny_model(tokenizer.vocab_size)
+        loader = make_dataloader(train_split, tokenizer, batch_size=4, shuffle=False)
+        src, tgt = next(iter(loader))
+        dec_in = tgt[:, :-1]
+        src_mask, tgt_self, cross = _make_masks(src, dec_in, PAD_ID)
+        logits = model(src, dec_in, src_mask=src_mask,
+                       tgt_self_attn_mask=tgt_self, tgt_cross_attn_mask=cross)
+        assert not torch.isnan(logits).any()
+        assert not torch.isinf(logits).any()
+
+    def test_loss_is_finite(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        model = _tiny_model(tokenizer.vocab_size)
+        criterion = nn.CrossEntropyLoss(ignore_index=PAD_ID)
+        loader = make_dataloader(train_split, tokenizer, batch_size=4, shuffle=False)
+        src, tgt = next(iter(loader))
+        dec_in = tgt[:, :-1]
+        tgt_out = tgt[:, 1:]
+        src_mask, tgt_self, cross = _make_masks(src, dec_in, PAD_ID)
+        logits = model(src, dec_in, src_mask=src_mask,
+                       tgt_self_attn_mask=tgt_self, tgt_cross_attn_mask=cross)
+        loss = criterion(logits.reshape(-1, logits.size(-1)), tgt_out.reshape(-1))
+        assert torch.isfinite(loss)
+
+    def test_backward_runs_without_error(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        model = _tiny_model(tokenizer.vocab_size)
+        criterion = nn.CrossEntropyLoss(ignore_index=PAD_ID)
+        loader = make_dataloader(train_split, tokenizer, batch_size=4, shuffle=False)
+        src, tgt = next(iter(loader))
+        dec_in = tgt[:, :-1]
+        tgt_out = tgt[:, 1:]
+        src_mask, tgt_self, cross = _make_masks(src, dec_in, PAD_ID)
+        logits = model(src, dec_in, src_mask=src_mask,
+                       tgt_self_attn_mask=tgt_self, tgt_cross_attn_mask=cross)
+        loss = criterion(logits.reshape(-1, logits.size(-1)), tgt_out.reshape(-1))
+        loss.backward()  # must not raise
+
