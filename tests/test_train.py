@@ -366,3 +366,24 @@ class TestCPUCompatibility:
         src, tgt = next(iter(loader))
         assert src.device == torch.device("cpu")
         assert tgt.device == torch.device("cpu")
+class TestWarmupSchedule:
+    def test_step_zero_gives_nonzero_lr(self) -> None:
+        assert _linear_warmup_schedule(0, 400) == pytest.approx(1 / 400)
+
+    def test_step_at_warmup_minus_one_gives_one(self) -> None:
+        assert _linear_warmup_schedule(399, 400) == pytest.approx(1.0)
+
+    def test_step_past_warmup_gives_one(self) -> None:
+        assert _linear_warmup_schedule(500, 400) == pytest.approx(1.0)
+        assert _linear_warmup_schedule(10_000, 400) == pytest.approx(1.0)
+
+    def test_zero_warmup_always_gives_one(self) -> None:
+        for step in [0, 1, 100]:
+            assert _linear_warmup_schedule(step, 0) == pytest.approx(1.0)
+
+    def test_lr_is_monotonically_increasing_during_warmup(self) -> None:
+        warmup = 100
+        multipliers = [_linear_warmup_schedule(s, warmup) for s in range(warmup)]
+        for i in range(1, len(multipliers)):
+            assert multipliers[i] > multipliers[i - 1]
+
