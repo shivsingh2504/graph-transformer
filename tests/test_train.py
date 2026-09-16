@@ -52,3 +52,39 @@ def _tiny_model(vocab_size: int) -> Transformer:
         d_ff=64,
         dropout=0.0,
     ).to(DEVICE)
+
+class TestLossIgnoresPadding:
+    def test_perturbing_pad_logits_does_not_change_loss(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        pad_id = tokenizer.pad_token_id
+        vocab_size = tokenizer.vocab_size
+        B, T = 2, 6
+
+        target = torch.tensor([
+            [5, 6, 7, 2, pad_id, pad_id],
+            [5, 8, 2, pad_id, pad_id, pad_id],
+        ])
+
+        logits_base = torch.randn(B, T, vocab_size)
+        logits_perturbed = logits_base.clone()
+        logits_perturbed[0, 4:, :] += 100.0
+        logits_perturbed[1, 3:, :] -= 100.0
+
+        criterion = nn.CrossEntropyLoss(ignore_index=pad_id)
+        loss_base = criterion(logits_base.reshape(-1, vocab_size), target.reshape(-1))
+        loss_perturbed = criterion(
+            logits_perturbed.reshape(-1, vocab_size), target.reshape(-1)
+        )
+
+        assert torch.isclose(loss_base, loss_perturbed, atol=1e-5), (
+            f"PAD-position logit change altered the loss: "
+            f"{loss_base.item():.6f} vs {loss_perturbed.item():.6f}"
+        )
+
+    def test_criterion_ignore_index_matches_tokenizer(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
+        assert criterion.ignore_index == tokenizer.pad_token_id == 0
+
