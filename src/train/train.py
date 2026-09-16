@@ -1,216 +1,273 @@
 from __future__ import annotations
-import os
-import sys
-from typing import Tuple,List,Dict
+
+from typing import Dict, List, Tuple
 
 import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import LambdaLR
-from torch.utils.data import DataLoader,Dataset
+from torch.utils.data import DataLoader, Dataset
 
 from data.dataset_generator import DatasetSplit
 from data.tokenizer import GraphTokenizer
-from model.layers import create_causal_mask,create_padding_mask
+from model.layers import create_causal_mask, create_padding_mask
 from model.model import Transformer
 
-
-_D_MODEL : int = 128
-_N_HEADS : int = 4
+# ---------------------------------------------------------------------------
+# Locked hyper-parameters (M6 spec)
+# ---------------------------------------------------------------------------
+_D_MODEL: int = 128
+_N_HEADS: int = 4
 _N_LAYERS: int = 3
-_D_FF:int = 512
-_DROPOUT : float = 0.1
+_D_FF: int = 512
+_DROPOUT: float = 0.1
 _LR: float = 1e-4
-_WEIGHT_DECAY : float = 1e-2
-_WARMUP_STEPS:int = 400
+_WEIGHT_DECAY: float = 1e-2
+_WARMUP_STEPS: int = 400
 _BATCH_SIZE: int = 32
 
-def _linear_warmup_schedule(step:int,warmup_steps:int)->float:
-  if warmup_steps <= 0:
+
+# ---------------------------------------------------------------------------
+# Scheduler
+# ---------------------------------------------------------------------------
+
+def _linear_warmup_schedule(step: int, warmup_steps: int) -> float:
+    if warmup_steps <= 0:
+        return 1.0
+    if step < warmup_steps:
+        return float(step + 1) / float(warmup_steps)
     return 1.0
-  if step < warmup_steps:
-    return float(step+1) / float(warmup_steps)
-  return 1.0
+
+
+# ---------------------------------------------------------------------------
+# PyTorch Dataset wrapper
+# ---------------------------------------------------------------------------
 
 class GraphPathDataset(Dataset):
-  def __init__(self,split: DatasetSplit, tokenizer:GraphTokenizer)->None:
-    self.tokenizer = tokenizer
-    self.examples = List[Tuple[List[int],List[int]]] = [
-      (tokenizer.encode_graph(graph), tokenizer.encode_path(path))
-      for graph , path in split.examples
-    ]
-  
-  def __len__(self)->int:
-    return len(self.examples)
+    def __init__(self, split: DatasetSplit, tokenizer: GraphTokenizer) -> None:
+        self.tokenizer = tokenizer
+        self.examples: List[Tuple[List[int], List[int]]] = [
+            (tokenizer.encode_graph(graph), tokenizer.encode_path(path))
+            for graph, path in split.examples
+        ]
 
-  def __getitem__(self, idx:int)->Tuple[List[int],List[int]]:
-    return self.examples[idx]
-  
+    def __len__(self) -> int:
+        return len(self.examples)
+
+    def __getitem__(self, idx: int) -> Tuple[List[int], List[int]]:
+        return self.examples[idx]
+
+
 def collate_fn(
-  batch: List[Tuple[List[int],List[int]]],
-  pad_id:int,
-)->Tuple[torch.Tensor,torch.Tensor]:
-  src_seqs , tgt_seqs = zip(*batch)
-  max_src = max(len(s) for s in src_seqs)
-  max_tgt = max(len(t) for t in tgt_seqs)
-  def _pad(seqs: Tuple[List[int],...],max_len:int)->torch.Tensor:
-    return torch.Tensor(
-      [s+[pad_id]*(max_len - len(s)) for s in seqs],
-      dtype = torch.long,
-    )
-  return _pad(src_seqs,max_src), _pad(tgt_seqs,max_tgt)
+    batch: List[Tuple[List[int], List[int]]],
+    pad_id: int,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    src_seqs, tgt_seqs = zip(*batch)
+
+    max_src = max(len(s) for s in src_seqs)
+    max_tgt = max(len(t) for t in tgt_seqs)
+
+    def _pad(seqs: Tuple[List[int], ...], max_len: int) -> torch.Tensor:
+        return torch.tensor(
+            [s + [pad_id] * (max_len - len(s)) for s in seqs],
+            dtype=torch.long,
+        )
+
+    return _pad(src_seqs, max_src), _pad(tgt_seqs, max_tgt)
+
 
 def make_dataloader(
-  split:DatasetSplit,
-  tokenizer:GraphTokenizer,
-  batch_size: int = _BATCH_SIZE,
-  shuffle : bool = True,
-)->DataLoader:
-  dataset = GraphPathDataset(split,tokenizer)
-  return DataLoader(
-    dataset,
-    batch_size=batch_size,
-    shuffle = shuffle,
-    collate_fn = lambda batch: collate_fn(batch,tokenizer.pad_token_id),
-  )
+    split: DatasetSplit,
+    tokenizer: GraphTokenizer,
+    batch_size: int = _BATCH_SIZE,
+    shuffle: bool = True,
+) -> DataLoader:
+    dataset = GraphPathDataset(split, tokenizer)
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        collate_fn=lambda batch: collate_fn(batch, tokenizer.pad_token_id),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mask construction
+# ---------------------------------------------------------------------------
 
 def _make_masks(
-  src :torch.Tensor,
-  decoder_input:torch.Tensor,
-  pad_id : int,
-)->Tuple[torch.Tensor,torch.Tensor,torch.Tensor]:
-  device = src.device
-  tgt_len = decoder_input.size(1)
-  src_mask = create_padding_mask(src,pad_id)
-  tgt_pad_mask = create_padding_mask(decoder_input,pad_id)
-  causal_mask = create_causal_mask(tgt_len,device=device)
-  tgt_self_attn_mask = causal_mask & tgt_pad_mask
-  tgt_cross_attn_mask = src_mask
-  return src_mask,tgt_self_attn_mask,tgt_cross_attn_mask
+    src: torch.Tensor,
+    decoder_input: torch.Tensor,
+    pad_id: int,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    device = src.device
+    tgt_len = decoder_input.size(1)
+
+    src_mask = create_padding_mask(src, pad_id)                   # (B, 1, 1, src_len)
+    tgt_pad_mask = create_padding_mask(decoder_input, pad_id)     # (B, 1, 1, tgt_len)
+    causal_mask = create_causal_mask(tgt_len, device=device)      # (1, 1, tgt_len, tgt_len)
+    tgt_self_attn_mask = causal_mask & tgt_pad_mask               # (B, 1, tgt_len, tgt_len)
+    tgt_cross_attn_mask = src_mask                                # (B, 1, 1, src_len)
+
+    return src_mask, tgt_self_attn_mask, tgt_cross_attn_mask
+
+
+# ---------------------------------------------------------------------------
+# Single epoch helpers
+# ---------------------------------------------------------------------------
 
 def _train_epoch(
-  model:Transformer,
-  loader:DataLoader,
-  optimizer: torch.optim.Optimizer,
-  criterion: nn.CrossEntropyLoss,
-  device: torch.device,
-  scheduler: LambdaLR | None = None
-)->float:
-  model.train()
-  total_loss = 0.0,
-  n_batches = 0
-  
-  for src, tgt in loader:
-    src = src.to(device)
-    tgt = tgt.to(device)
-    decoder_input = tgt[:, :-1]
-    target_output = tgt[:, 1:]
-    src_mask,tgt_self_attn_mask,tgt_cross_attn_mask = _make_masks(src,decoder_input,criterion.ignore_index)
-    optimizer.zero_grad()
-    logits = model(
-      src,
-      decoder_input,
-      src_mask=src_mask,
-      tgt_self_attn_mask=tgt_self_attn_mask,
-      tgt_cross_attn_mask=tgt_cross_attn_mask
-    )
-    loss = criterion(
-      logits.reshape(-1,logits.size(-1)),
-      target_output.reshape(-1),
-    )
-    loss.backward()
-    optimizer.step()
-    if scheduler is not None:
-      scheduler.step()
-    total_loss += loss.item()
-    n_batches += 1
-  return total_loss / n_batches if n_batches > 0 else 0.0
+    model: Transformer,
+    loader: DataLoader,
+    optimizer: torch.optim.Optimizer,
+    criterion: nn.CrossEntropyLoss,
+    device: torch.device,
+    scheduler: LambdaLR | None = None,
+) -> float:
+    model.train()
+    total_loss = 0.0
+    n_batches = 0
+
+    for src, tgt in loader:
+        src = src.to(device)
+        tgt = tgt.to(device)
+
+        decoder_input = tgt[:, :-1]   # (B, T-1)
+        target_output = tgt[:, 1:]    # (B, T-1)
+
+        src_mask, tgt_self_attn_mask, tgt_cross_attn_mask = _make_masks(
+            src, decoder_input, criterion.ignore_index
+        )
+
+        optimizer.zero_grad()
+
+        logits = model(
+            src,
+            decoder_input,
+            src_mask=src_mask,
+            tgt_self_attn_mask=tgt_self_attn_mask,
+            tgt_cross_attn_mask=tgt_cross_attn_mask,
+        )  # (B, T-1, vocab_size)
+
+        loss = criterion(
+            logits.reshape(-1, logits.size(-1)),
+            target_output.reshape(-1),
+        )
+
+        loss.backward()
+        optimizer.step()
+        if scheduler is not None:
+            scheduler.step()
+
+        total_loss += loss.item()
+        n_batches += 1
+
+    return total_loss / n_batches if n_batches > 0 else 0.0
+
 
 def _val_epoch(
-  model:Transformer,
-  loader:DataLoader,
-  optimizer: torch.optim.Optimizer,
-  criterion: nn.CrossEntropyLoss,
-  device: torch.device,
-  scheduler: LambdaLR | None = None
-)->float:
-  model.eval()
-  total_loss = 0.0,
-  n_batches = 0
-  
-  for src, tgt in loader:
-    src = src.to(device)
-    tgt = tgt.to(device)
-    decoder_input = tgt[:, :-1]
-    target_output = tgt[:, 1:]
-    src_mask,tgt_self_attn_mask,tgt_cross_attn_mask = _make_masks(src,decoder_input,criterion.ignore_index)
-    optimizer.zero_grad()
-    logits = model(
-      src,
-      decoder_input,
-      src_mask=src_mask,
-      tgt_self_attn_mask=tgt_self_attn_mask,
-      tgt_cross_attn_mask=tgt_cross_attn_mask
-    )
-    loss = criterion(
-      logits.reshape(-1,logits.size(-1)),
-      target_output.reshape(-1),
-    )
-    loss.backward()
-    optimizer.step()
-    if scheduler is not None:
-      scheduler.step()
-    total_loss += loss.item()
-    n_batches += 1
-  return total_loss / n_batches if n_batches > 0 else 0.0
+    model: Transformer,
+    loader: DataLoader,
+    criterion: nn.CrossEntropyLoss,
+    device: torch.device,
+) -> float:
+    model.eval()
+    total_loss = 0.0
+    n_batches = 0
+
+    with torch.no_grad():
+        for src, tgt in loader:
+            src = src.to(device)
+            tgt = tgt.to(device)
+
+            decoder_input = tgt[:, :-1]
+            target_output = tgt[:, 1:]
+
+            src_mask, tgt_self_attn_mask, tgt_cross_attn_mask = _make_masks(
+                src, decoder_input, criterion.ignore_index
+            )
+
+            logits = model(
+                src,
+                decoder_input,
+                src_mask=src_mask,
+                tgt_self_attn_mask=tgt_self_attn_mask,
+                tgt_cross_attn_mask=tgt_cross_attn_mask,
+            )
+
+            loss = criterion(
+                logits.reshape(-1, logits.size(-1)),
+                target_output.reshape(-1),
+            )
+
+            total_loss += loss.item()
+            n_batches += 1
+
+    return total_loss / n_batches if n_batches > 0 else 0.0
+
+
+# ---------------------------------------------------------------------------
+# Top-level training function
+# ---------------------------------------------------------------------------
 
 def train_model(
-  train_split: DatasetSplit,
-  val_split : DatasetSplit,
-  tokenizer : GraphTokenizer,
-  *,
-  n_epochs: int = _BATCH_SIZE,
-  lr: float = _LR,
-  weight_decay: float = _WEIGHT_DECAY,
-  warmup_steps : int = _WARMUP_STEPS,
-  n_layers : int = _N_LAYERS,
-  d_model : int = _D_MODEL,
-  n_heads : int = _N_HEADS,
-  d_ff : int = _D_FF,
-  dropout : float = _DROPOUT,
-  device : torch.devie | None = None
-)->Tuple[Transformer,Dict[str,List[float]]]:
-  if device is None:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  model = Transformer(
-    vocab_size= tokenizer.vocab_size,
-    n_layers=n_layers,
-    d_model=d_model,
-    n_heads=n_heads,
-    d_ff=d_ff,
-    dropout=dropout
-  ).to(device)
-  optimizer = torch.optim.AdamW(
-    model.parameters(),lr=lr,weight_decay=weight_decay
-  )
-  scheduler = LambdaLR(
-    optimizer,
-    lr_lambda= lambda step: _linear_warmup_schedule(step,warmup_steps),
-  )
-  criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
-  train_loader = make_dataloader(
-    train_split,tokenizer,batch_size = batch_size,shuffle=True)
-  val_loader = make_dataloader(val_split,tokenizer,batch_size=batch_size,shuffle=False)
-  history : Dict[str,List[float]] = {"train_loss": [], "val_loss": []}
-  for epoch in range(1,n_epochs+1):
-    train_loss = _train_epoch(
-      model=model,train_loader=train_loader,optimizer=optimizer,criterion=criterion,device=device,scheduler=scheduler
+    train_split: DatasetSplit,
+    val_split: DatasetSplit,
+    tokenizer: GraphTokenizer,
+    *,
+    n_epochs: int = 10,
+    batch_size: int = _BATCH_SIZE,
+    lr: float = _LR,
+    weight_decay: float = _WEIGHT_DECAY,
+    warmup_steps: int = _WARMUP_STEPS,
+    n_layers: int = _N_LAYERS,
+    d_model: int = _D_MODEL,
+    n_heads: int = _N_HEADS,
+    d_ff: int = _D_FF,
+    dropout: float = _DROPOUT,
+    device: torch.device | None = None,
+) -> Tuple[Transformer, Dict[str, List[float]]]:
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model = Transformer(
+        vocab_size=tokenizer.vocab_size,
+        n_layers=n_layers,
+        d_model=d_model,
+        n_heads=n_heads,
+        d_ff=d_ff,
+        dropout=dropout,
+    ).to(device)
+
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=lr, weight_decay=weight_decay
     )
-    val_loss = _val_epoch(model=model,val_loader=val_loader,criterion=criterion,device=device)
-    history["train_loss"].append(train_loss)
-    history["val_loss"].append(val_loss)
-    print(
-      f"Epoch {epoch:3d}/{n_epochs}  "
-      f"train_loss={train_loss:.4f}  val_loss={val_loss:.4f}"
+    scheduler = LambdaLR(
+        optimizer,
+        lr_lambda=lambda step: _linear_warmup_schedule(step, warmup_steps),
     )
-  return model,history
-  
+    criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
+
+    train_loader = make_dataloader(
+        train_split, tokenizer, batch_size=batch_size, shuffle=True
+    )
+    val_loader = make_dataloader(
+        val_split, tokenizer, batch_size=batch_size, shuffle=False
+    )
+
+    history: Dict[str, List[float]] = {"train_loss": [], "val_loss": []}
+
+    for epoch in range(1, n_epochs + 1):
+        train_loss = _train_epoch(
+            model, train_loader, optimizer, criterion, device, scheduler
+        )
+        val_loss = _val_epoch(model, val_loader, criterion, device)
+
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+
+        print(
+            f"Epoch {epoch:3d}/{n_epochs}  "
+            f"train_loss={train_loss:.4f}  val_loss={val_loss:.4f}"
+        )
+
+    return model, history

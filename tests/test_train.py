@@ -23,6 +23,10 @@ from train.train import (
     _linear_warmup_schedule,
 )
 
+# ---------------------------------------------------------------------------
+# Shared constants / fixtures
+# ---------------------------------------------------------------------------
+
 DEVICE = torch.device("cpu")
 PAD_ID = 0   # confirmed: GraphTokenizer.pad_token_id == 0
 
@@ -52,6 +56,11 @@ def _tiny_model(vocab_size: int) -> Transformer:
         d_ff=64,
         dropout=0.0,
     ).to(DEVICE)
+
+
+# ---------------------------------------------------------------------------
+# 1. Loss ignores padding
+# ---------------------------------------------------------------------------
 
 class TestLossIgnoresPadding:
     def test_perturbing_pad_logits_does_not_change_loss(
@@ -87,6 +96,11 @@ class TestLossIgnoresPadding:
     ) -> None:
         criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
         assert criterion.ignore_index == tokenizer.pad_token_id == 0
+
+
+# ---------------------------------------------------------------------------
+# 2. Teacher-forcing shift — tested via loader output
+# ---------------------------------------------------------------------------
 
 class TestTeacherForcingShift:
     def test_decoder_input_starts_with_bos(
@@ -130,6 +144,11 @@ class TestTeacherForcingShift:
         # The two shifted views must reconstruct the original sequence
         combined = torch.cat([tgt[:, :1], tgt[:, 1:]], dim=1)
         assert torch.equal(combined, tgt)
+
+
+# ---------------------------------------------------------------------------
+# 3. _make_masks — shapes, dtypes, and semantics
+# ---------------------------------------------------------------------------
 
 class TestMakeMasks:
     def test_src_mask_shape(self, tokenizer: GraphTokenizer) -> None:
@@ -189,6 +208,11 @@ class TestMakeMasks:
             "tgt_cross_attn_mask must equal src_mask"
         )
 
+
+# ---------------------------------------------------------------------------
+# 4. Causal-leakage test
+# ---------------------------------------------------------------------------
+
 class TestCausalMaskPreventsLeakage:
     def test_future_token_change_does_not_affect_past_logits(
         self, tokenizer: GraphTokenizer, tiny_splits
@@ -224,6 +248,11 @@ class TestCausalMaskPreventsLeakage:
             "Causal mask failed: logits at past positions changed when only "
             "a future decoder token was modified."
         )
+
+
+# ---------------------------------------------------------------------------
+# 5. One training step works
+# ---------------------------------------------------------------------------
 
 class TestOneTrainingStep:
     def test_forward_produces_finite_logits(
@@ -271,6 +300,12 @@ class TestOneTrainingStep:
                        tgt_self_attn_mask=tgt_self, tgt_cross_attn_mask=cross)
         loss = criterion(logits.reshape(-1, logits.size(-1)), tgt_out.reshape(-1))
         loss.backward()  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# 6. Parameters actually update
+# ---------------------------------------------------------------------------
+
 class TestParametersUpdate:
     def test_embedding_weights_change_after_one_epoch(
         self, tokenizer: GraphTokenizer, tiny_splits
@@ -291,6 +326,11 @@ class TestParametersUpdate:
             "optimization is not working."
         )
 
+
+# ---------------------------------------------------------------------------
+# 7. Validation does not update parameters
+# ---------------------------------------------------------------------------
+
 class TestValidationDoesNotUpdate:
     def test_all_params_unchanged_after_val_epoch(
         self, tokenizer: GraphTokenizer, tiny_splits
@@ -310,6 +350,11 @@ class TestValidationDoesNotUpdate:
             assert torch.equal(params_before[name], p.data), (
                 f"Parameter '{name}' was modified during validation."
             )
+
+
+# ---------------------------------------------------------------------------
+# 8. Training history
+# ---------------------------------------------------------------------------
 
 class TestTrainingHistory:
     def _run(self, tokenizer, splits, n_epochs=2):
@@ -344,6 +389,11 @@ class TestTrainingHistory:
             assert isinstance(loss, float)
             assert torch.isfinite(torch.tensor(loss)), f"Non-finite loss: {loss}"
 
+
+# ---------------------------------------------------------------------------
+# 9. CPU compatibility
+# ---------------------------------------------------------------------------
+
 class TestCPUCompatibility:
     def test_train_model_runs_on_explicit_cpu(
         self, tokenizer: GraphTokenizer, tiny_splits
@@ -366,6 +416,12 @@ class TestCPUCompatibility:
         src, tgt = next(iter(loader))
         assert src.device == torch.device("cpu")
         assert tgt.device == torch.device("cpu")
+
+
+# ---------------------------------------------------------------------------
+# 10. Warmup scheduler
+# ---------------------------------------------------------------------------
+
 class TestWarmupSchedule:
     def test_step_zero_gives_nonzero_lr(self) -> None:
         assert _linear_warmup_schedule(0, 400) == pytest.approx(1 / 400)
@@ -386,6 +442,11 @@ class TestWarmupSchedule:
         multipliers = [_linear_warmup_schedule(s, warmup) for s in range(warmup)]
         for i in range(1, len(multipliers)):
             assert multipliers[i] > multipliers[i - 1]
+
+
+# ---------------------------------------------------------------------------
+# 11. Overfit-single-batch sanity check
+# ---------------------------------------------------------------------------
 
 class TestOverfitSingleBatch:
     def test_loss_drops_significantly_on_single_batch(
