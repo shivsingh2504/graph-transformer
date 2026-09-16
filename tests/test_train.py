@@ -188,3 +188,40 @@ class TestMakeMasks:
         assert torch.equal(src_mask, cross), (
             "tgt_cross_attn_mask must equal src_mask"
         )
+
+class TestCausalMaskPreventsLeakage:
+    def test_future_token_change_does_not_affect_past_logits(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        loader = make_dataloader(train_split, tokenizer, batch_size=2, shuffle=False)
+        src, tgt = next(iter(loader))
+        src = src.to(DEVICE)
+        tgt = tgt.to(DEVICE)
+
+        model = _tiny_model(tokenizer.vocab_size)
+        model.eval()
+
+        dec_in_1 = tgt[:, :-1].clone()
+        dec_in_2 = tgt[:, :-1].clone()
+
+        T = dec_in_1.size(1)
+        dec_in_2[:, T - 1] = (dec_in_2[:, T - 1] + 5) % tokenizer.vocab_size
+        dec_in_2[:, T - 1] = dec_in_2[:, T - 1].clamp(min=1)
+
+        with torch.no_grad():
+            src_mask, tgt_self_1, cross_1 = _make_masks(src, dec_in_1, PAD_ID)
+            logits_1 = model(src, dec_in_1, src_mask=src_mask,
+                             tgt_self_attn_mask=tgt_self_1,
+                             tgt_cross_attn_mask=cross_1)
+
+            _, tgt_self_2, cross_2 = _make_masks(src, dec_in_2, PAD_ID)
+            logits_2 = model(src, dec_in_2, src_mask=src_mask,
+                             tgt_self_attn_mask=tgt_self_2,
+                             tgt_cross_attn_mask=cross_2)
+
+        assert torch.allclose(logits_1[:, :-1, :], logits_2[:, :-1, :], atol=1e-5), (
+            "Causal mask failed: logits at past positions changed when only "
+            "a future decoder token was modified."
+        )
+
