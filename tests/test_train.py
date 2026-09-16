@@ -271,4 +271,23 @@ class TestOneTrainingStep:
                        tgt_self_attn_mask=tgt_self, tgt_cross_attn_mask=cross)
         loss = criterion(logits.reshape(-1, logits.size(-1)), tgt_out.reshape(-1))
         loss.backward()  # must not raise
+class TestParametersUpdate:
+    def test_embedding_weights_change_after_one_epoch(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        model = _tiny_model(tokenizer.vocab_size)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-2)
+        criterion = nn.CrossEntropyLoss(ignore_index=PAD_ID)
+
+        param_before = model.encoder.embedding.embedding.weight.data.clone()
+
+        loader = make_dataloader(train_split, tokenizer, batch_size=4, shuffle=False)
+        _train_epoch(model, loader, optimizer, criterion, DEVICE)
+
+        param_after = model.encoder.embedding.embedding.weight.data
+        assert not torch.equal(param_before, param_after), (
+            "Embedding weights unchanged after training epoch — "
+            "optimization is not working."
+        )
 
