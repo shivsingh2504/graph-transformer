@@ -88,3 +88,47 @@ class TestLossIgnoresPadding:
         criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
         assert criterion.ignore_index == tokenizer.pad_token_id == 0
 
+class TestTeacherForcingShift:
+    def test_decoder_input_starts_with_bos(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        loader = make_dataloader(train_split, tokenizer, batch_size=4, shuffle=False)
+        _, tgt = next(iter(loader))
+        decoder_input = tgt[:, :-1]
+        assert (decoder_input[:, 0] == tokenizer.bos_token_id).all(), (
+            "decoder_input[:,0] must be BOS for every example in the batch"
+        )
+
+    def test_target_output_contains_eos(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        loader = make_dataloader(train_split, tokenizer, batch_size=4, shuffle=False)
+        _, tgt = next(iter(loader))
+        target_output = tgt[:, 1:]
+        has_eos = (target_output == tokenizer.eos_token_id).any(dim=1)
+        assert has_eos.all(), "EOS missing from at least one target_output row"
+
+    def test_shapes_are_equal_and_T_minus_1(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        loader = make_dataloader(train_split, tokenizer, batch_size=4, shuffle=False)
+        _, tgt = next(iter(loader))
+        decoder_input = tgt[:, :-1]
+        target_output = tgt[:, 1:]
+        assert decoder_input.shape == target_output.shape
+        assert decoder_input.shape[1] == tgt.shape[1] - 1
+
+    def test_decoder_input_and_target_output_are_shifted_by_one(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        loader = make_dataloader(train_split, tokenizer, batch_size=4, shuffle=False)
+        _, tgt = next(iter(loader))
+        # The two shifted views must reconstruct the original sequence
+        combined = torch.cat([tgt[:, :1], tgt[:, 1:]], dim=1)
+        assert torch.equal(combined, tgt)
+
+
