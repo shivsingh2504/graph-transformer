@@ -62,7 +62,7 @@ def collate_fn(
 def make_dataloader(
   split:DatasetSplit,
   tokenizer:GraphTokenizer,
-  batch_size:int = _BATCH_SIZE,
+  batch_size: int = _BATCH_SIZE,
   shuffle : bool = True,
 )->DataLoader:
   dataset = GraphPathDataset(split,tokenizer)
@@ -162,3 +162,55 @@ def _val_epoch(
     total_loss += loss.item()
     n_batches += 1
   return total_loss / n_batches if n_batches > 0 else 0.0
+
+def train_model(
+  train_split: DatasetSplit,
+  val_split : DatasetSplit,
+  tokenizer : GraphTokenizer,
+  *,
+  n_epochs: int = _BATCH_SIZE,
+  lr: float = _LR,
+  weight_decay: float = _WEIGHT_DECAY,
+  warmup_steps : int = _WARMUP_STEPS,
+  n_layers : int = _N_LAYERS,
+  d_model : int = _D_MODEL,
+  n_heads : int = _N_HEADS,
+  d_ff : int = _D_FF,
+  dropout : float = _DROPOUT,
+  device : torch.devie | None = None
+)->Tuple[Transformer,Dict[str,List[float]]]:
+  if device is None:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  model = Transformer(
+    vocab_size= tokenizer.vocab_size,
+    n_layers=n_layers,
+    d_model=d_model,
+    n_heads=n_heads,
+    d_ff=d_ff,
+    dropout=dropout
+  ).to(device)
+  optimizer = torch.optim.AdamW(
+    model.parameters(),lr=lr,weight_decay=weight_decay
+  )
+  scheduler = LambdaLR(
+    optimizer,
+    lr_lambda= lambda step: _linear_warmup_schedule(step,warmup_steps),
+  )
+  criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
+  train_loader = make_dataloader(
+    train_split,tokenizer,batch_size = batch_size,shuffle=True)
+  val_loader = make_dataloader(val_split,tokenizer,batch_size=batch_size,shuffle=False)
+  history : Dict[str,List[float]] = {"train_loss": [], "val_loss": []}
+  for epoch in range(1,n_epochs+1):
+    train_loss = _train_epoch(
+      model=model,train_loader=train_loader,optimizer=optimizer,criterion=criterion,device=device,scheduler=scheduler
+    )
+    val_loss = _val_epoch(model=model,val_loader=val_loader,criterion=criterion,device=device)
+    history["train_loss"].append(train_loss)
+    history["val_loss"].append(val_loss)
+    print(
+      f"Epoch {epoch:3d}/{n_epochs}  "
+      f"train_loss={train_loss:.4f}  val_loss={val_loss:.4f}"
+    )
+  return model,history
+  
