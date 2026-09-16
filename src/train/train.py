@@ -86,3 +86,41 @@ def _make_masks(
   tgt_self_attn_mask = causal_mask & tgt_pad_mask
   tgt_cross_attn_mask = src_mask
   return src_mask,tgt_self_attn_mask,tgt_cross_attn_mask
+
+def _train_epoch(
+  model:Transformer,
+  loader:DataLoader,
+  optimizer: torch.optim.Optimizer,
+  criterion: nn.CrossEntropyLoss,
+  device: torch.device,
+  scheduler: LambdaLR | None = None
+)->float:
+  model.train()
+  total_loss = 0.0,
+  n_batches = 0
+  
+  for src, tgt in loader:
+    src = src.to(device)
+    tgt = tgt.to(device)
+    decoder_input = tgt[:, :-1]
+    target_output = tgt[:, 1:]
+    src_mask,tgt_self_attn_mask,tgt_cross_attn_mask = _make_masks(src,decoder_input,criterion.ignore_index)
+    optimizer.zero_grad()
+    logits = model(
+      src,
+      decoder_input,
+      src_mask=src_mask,
+      tgt_self_attn_mask=tgt_self_attn_mask,
+      tgt_cross_attn_mask=tgt_cross_attn_mask
+    )
+    loss = criterion(
+      logits.reshape(-1,logits.size(-1)),
+      target_output.reshape(-1),
+    )
+    loss.backward()
+    optimizer.step()
+    if scheduler is not None:
+      scheduler.step()
+    total_loss += loss.item()
+    n_batches += 1
+  return total_loss / n_batches if n_batches > 0 else 0.0
