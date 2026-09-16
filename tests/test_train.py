@@ -131,4 +131,60 @@ class TestTeacherForcingShift:
         combined = torch.cat([tgt[:, :1], tgt[:, 1:]], dim=1)
         assert torch.equal(combined, tgt)
 
+class TestMakeMasks:
+    def test_src_mask_shape(self, tokenizer: GraphTokenizer) -> None:
+        B, S = 3, 10
+        src = torch.randint(1, tokenizer.vocab_size, (B, S))
+        src_mask, _, _ = _make_masks(src, torch.ones(B, 5, dtype=torch.long), PAD_ID)
+        assert src_mask.shape == (B, 1, 1, S), f"Got {src_mask.shape}"
 
+    def test_tgt_self_attn_mask_shape(self, tokenizer: GraphTokenizer) -> None:
+        B, T = 3, 7
+        src = torch.randint(1, tokenizer.vocab_size, (3, 10))
+        dec_in = torch.randint(1, tokenizer.vocab_size, (B, T))
+        _, tgt_self, _ = _make_masks(src, dec_in, PAD_ID)
+        assert tgt_self.shape == (B, 1, T, T), f"Got {tgt_self.shape}"
+
+    def test_tgt_cross_attn_mask_shape(self, tokenizer: GraphTokenizer) -> None:
+        B, S = 3, 10
+        src = torch.randint(1, tokenizer.vocab_size, (B, S))
+        dec_in = torch.randint(1, tokenizer.vocab_size, (B, 5))
+        _, _, cross = _make_masks(src, dec_in, PAD_ID)
+        assert cross.shape == (B, 1, 1, S), f"Got {cross.shape}"
+
+    def test_all_masks_are_bool(self, tokenizer: GraphTokenizer) -> None:
+        src = torch.randint(1, tokenizer.vocab_size, (2, 8))
+        dec_in = torch.randint(1, tokenizer.vocab_size, (2, 5))
+        for mask in _make_masks(src, dec_in, PAD_ID):
+            assert mask.dtype == torch.bool, f"Expected bool, got {mask.dtype}"
+
+    def test_causal_structure_upper_triangle_is_false(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        B, T = 2, 6
+        src = torch.randint(1, tokenizer.vocab_size, (B, 8))
+        dec_in = torch.randint(1, tokenizer.vocab_size, (B, T))
+        _, tgt_self, _ = _make_masks(src, dec_in, PAD_ID)
+        mat = tgt_self[0, 0]   # (T, T)
+        for i in range(T):
+            for j in range(i + 1, T):
+                assert not mat[i, j].item(), (
+                    f"Future position ({i},{j}) is not masked"
+                )
+
+    def test_pad_positions_masked_in_src_mask(self) -> None:
+        B, S = 2, 8
+        src = torch.randint(1, 65, (B, S))
+        src[:, -2:] = PAD_ID
+        src_mask, _, _ = _make_masks(src, torch.ones(B, 4, dtype=torch.long), PAD_ID)
+        assert not src_mask[0, 0, 0, -1].item()
+        assert not src_mask[0, 0, 0, -2].item()
+        assert src_mask[0, 0, 0, 0].item()
+
+    def test_cross_attn_mask_is_src_mask(self) -> None:
+        src = torch.randint(1, 65, (2, 8))
+        dec_in = torch.randint(1, 65, (2, 5))
+        src_mask, _, cross = _make_masks(src, dec_in, PAD_ID)
+        assert torch.equal(src_mask, cross), (
+            "tgt_cross_attn_mask must equal src_mask"
+        )
