@@ -310,3 +310,37 @@ class TestValidationDoesNotUpdate:
             assert torch.equal(params_before[name], p.data), (
                 f"Parameter '{name}' was modified during validation."
             )
+
+class TestTrainingHistory:
+    def _run(self, tokenizer, splits, n_epochs=2):
+        train_split, val_split = splits
+        return train_model(
+            train_split, val_split, tokenizer,
+            n_epochs=n_epochs, batch_size=8, lr=1e-3, warmup_steps=4,
+            n_layers=1, d_model=32, n_heads=4, d_ff=64, dropout=0.0,
+            device=DEVICE,
+        )
+
+    def test_history_has_both_keys(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        _, history = self._run(tokenizer, tiny_splits)
+        assert "train_loss" in history
+        assert "val_loss" in history
+
+    def test_history_length_matches_epochs(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        n = 3
+        _, history = self._run(tokenizer, tiny_splits, n_epochs=n)
+        assert len(history["train_loss"]) == n
+        assert len(history["val_loss"]) == n
+
+    def test_history_values_are_finite_floats(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        _, history = self._run(tokenizer, tiny_splits)
+        for loss in history["train_loss"] + history["val_loss"]:
+            assert isinstance(loss, float)
+            assert torch.isfinite(torch.tensor(loss)), f"Non-finite loss: {loss}"
+
