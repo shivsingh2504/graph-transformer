@@ -387,3 +387,44 @@ class TestWarmupSchedule:
         for i in range(1, len(multipliers)):
             assert multipliers[i] > multipliers[i - 1]
 
+class TestOverfitSingleBatch:
+    def test_loss_drops_significantly_on_single_batch(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, _ = tiny_splits
+        loader = make_dataloader(train_split, tokenizer, batch_size=8, shuffle=False)
+        src, tgt = next(iter(loader))
+        src = src.to(DEVICE)
+        tgt = tgt.to(DEVICE)
+
+        model = Transformer(
+            vocab_size=tokenizer.vocab_size,
+            n_layers=2, d_model=64, n_heads=4, d_ff=128, dropout=0.0,
+        ).to(DEVICE)
+
+        optimizer = torch.optim.AdamW(model.parameters(), lr=1e-2, weight_decay=0.0)
+        criterion = nn.CrossEntropyLoss(ignore_index=PAD_ID)
+
+        dec_in = tgt[:, :-1]
+        tgt_out = tgt[:, 1:]
+        src_mask, tgt_self, cross = _make_masks(src, dec_in, PAD_ID)
+
+        final_loss = float("inf")
+        for _ in range(300):
+            model.train()
+            optimizer.zero_grad()
+            logits = model(src, dec_in, src_mask=src_mask,
+                           tgt_self_attn_mask=tgt_self,
+                           tgt_cross_attn_mask=cross)
+            loss = criterion(
+                logits.reshape(-1, logits.size(-1)), tgt_out.reshape(-1)
+            )
+            loss.backward()
+            optimizer.step()
+            final_loss = loss.item()
+
+        assert final_loss < 0.5, (
+            f"Loss after 300 steps on a fixed batch is {final_loss:.4f} — "
+            f"expected < 0.5. The training loop may be broken (wrong masks, "
+            f"disconnected gradients, etc.)."
+        )
