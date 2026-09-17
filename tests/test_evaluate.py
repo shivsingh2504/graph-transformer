@@ -465,3 +465,47 @@ class TestEvaluateSplit:
         assert result.valid_and_optimal_fraction == 0.0
         assert result.num_examples == 0
 
+
+class TestEvalResultProperties:
+    def _make_result(self, flags: list) -> EvalResult:
+        r = EvalResult()
+        for f in flags:
+            r.per_example.append(ExampleResult(
+                decoded_nodes=[0, 1] if f else [],
+                edges_valid=f,
+                valid_path=f,
+                correct_endpoints=f,
+                optimal_cost=f,
+                valid_and_optimal=f,
+                decoded_cost=1 if f else None,
+                true_cost=1,
+            ))
+        return r
+
+    def test_all_valid(self) -> None:
+        r = self._make_result([True, True, True, True])
+        assert r.valid_and_optimal_fraction == pytest.approx(1.0)
+        assert r.num_valid_and_optimal == 4
+
+    def test_none_valid(self) -> None:
+        r = self._make_result([False, False, False])
+        assert r.valid_and_optimal_fraction == pytest.approx(0.0)
+        assert r.num_valid_and_optimal == 0
+
+    def test_mixed(self) -> None:
+        r = self._make_result([True, False, True, False, True])
+        assert r.valid_and_optimal_fraction == pytest.approx(3 / 5)
+        assert r.num_valid_and_optimal == 3
+
+    def test_empty_result(self) -> None:
+        r = EvalResult()
+        assert r.valid_and_optimal_fraction == 0.0
+        assert r.num_examples == 0
+        assert r.num_valid_and_optimal == 0
+
+    def test_summary_values_consistent(self) -> None:
+        r = self._make_result([True, True, False])
+        s = r.summary()
+        assert s["num_examples"] == pytest.approx(3.0)
+        assert s["num_valid_and_optimal"] == pytest.approx(2.0)
+        assert s["valid_and_optimal_fraction"] == pytest.approx(2 / 3)
