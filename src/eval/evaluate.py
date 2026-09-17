@@ -123,3 +123,44 @@ def _decode_token_sequence(
     nodes.append(node_id)
   return None
 
+def _build_edge_set(graph:Graph)->Set[Tuple[int,int]]:
+  return {(min(u,v),max(u,v)) for u,v,_ in graph.edges}
+
+def _check_path(
+  nodes : List[int],
+  graph : Graph,
+  true_cost: int,
+)->Tuple[bool,bool,bool,bool,Optional[int]]:
+  if len(nodes) == 0:
+    return False, False, False, False, None
+  source : int = graph.source
+  target : int = graph.target
+  
+  correct_endpoints: bool = (nodes[0]==source and nodes[-1]==target)
+  if len(nodes)==1:
+    trivial : bool = (source==target and nodes[0]==source)
+    decoded_cost_single : Optional[int]=0 if trivial else None
+    optimal_cost_single: bool = (0==true_cost) if trivial else False
+  adj : Dict[int,List[Tuple[int,int]]] = graph.adjacency()
+  edge_set : Set[Tuple[int,int]] = _build_edge_set(graph)
+  edges_valid : bool = True
+  decoded_cost : Optional[int]=0
+  for i in range(len(nodes)-1):
+    u,v = nodes[i],nodes[i+1]
+    canonical = (min(u,v),max(u,v))
+    if canonical not in edge_set:
+      edges_valid = False
+      decoded_cost = None
+      break
+    for neighbour , weight in adj[u]:
+      if neighbour == v:
+        decoded_cost += weight
+      else:
+        raise AssertionError(
+          f"Edge {canonical} is present in edge_set but {v} not found "
+          f"in adj[{u}].  graph.adjacency() appears asymmetric — "
+          f"data pipeline error."
+        )
+  is_simple: bool = len(set(nodes)) == len(nodes)
+  valid_path : bool = edges_valid and is_simple
+  
