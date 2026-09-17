@@ -385,3 +385,83 @@ class TestEvaluateExample:
         )
         if result.decoded_cost is not None:
             assert result.decoded_cost >= 0
+
+
+class TestEvaluateSplit:
+    def test_returns_eval_result_instance(
+        self, tiny_model: Transformer,
+        tiny_split: DatasetSplit,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_split(
+            tiny_model, tiny_split, tokenizer, device=DEVICE, max_decode_len=20
+        )
+        assert isinstance(result, EvalResult)
+
+    def test_num_examples_matches_split(
+        self, tiny_model: Transformer,
+        tiny_split: DatasetSplit,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_split(
+            tiny_model, tiny_split, tokenizer, device=DEVICE, max_decode_len=20
+        )
+        assert result.num_examples == tiny_split.num_examples
+
+    def test_per_example_length_matches(
+        self, tiny_model: Transformer,
+        tiny_split: DatasetSplit,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_split(
+            tiny_model, tiny_split, tokenizer, device=DEVICE, max_decode_len=20
+        )
+        assert len(result.per_example) == tiny_split.num_examples
+
+    def test_all_fractions_in_zero_one_range(
+        self, tiny_model: Transformer,
+        tiny_split: DatasetSplit,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_split(
+            tiny_model, tiny_split, tokenizer, device=DEVICE, max_decode_len=20
+        )
+        assert 0.0 <= result.valid_and_optimal_fraction <= 1.0
+        assert 0.0 <= result.edges_valid_fraction <= 1.0
+        assert 0.0 <= result.valid_path_fraction <= 1.0
+        assert 0.0 <= result.correct_endpoints_fraction <= 1.0
+        assert 0.0 <= result.optimal_cost_fraction <= 1.0
+
+    def test_summary_has_all_required_keys(
+        self, tiny_model: Transformer,
+        tiny_split: DatasetSplit,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_split(
+            tiny_model, tiny_split, tokenizer, device=DEVICE, max_decode_len=20
+        )
+        s = result.summary()
+        for key in (
+            "valid_and_optimal_fraction",
+            "edges_valid_fraction",
+            "valid_path_fraction",
+            "correct_endpoints_fraction",
+            "optimal_cost_fraction",
+            "num_examples",
+            "num_valid_and_optimal",
+        ):
+            assert key in s, f"Missing summary key: {key}"
+
+    def test_empty_split_returns_zero_fraction(
+        self, tiny_model: Transformer,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        empty = DatasetSplit(
+            examples=[], num_examples=0, node_range=(4, 6), base_seed=0
+        )
+        result = evaluate_split(
+            tiny_model, empty, tokenizer, device=DEVICE, max_decode_len=20
+        )
+        assert result.valid_and_optimal_fraction == 0.0
+        assert result.num_examples == 0
+
