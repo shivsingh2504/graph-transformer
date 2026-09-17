@@ -225,3 +225,92 @@ class TestBuildEdgeSet:
         es = _build_edge_set(graph)
         assert (0, 2) not in es
         assert (1, 2) not in es
+
+class TestCheckPath:
+    @pytest.fixture(autouse=True)
+    def _setup(self) -> None:
+        self.graph = Graph(
+            num_nodes=3,
+            edges=[(0, 1, 1), (1, 2, 2), (0, 2, 5)],
+            source=0, target=2, seed=0,
+        )
+        self.true_cost = 3
+
+    def test_correct_optimal_path(self) -> None:
+        vp, ce, ev, oc, dc = _check_path([0, 1, 2], self.graph, self.true_cost)
+        assert vp is True
+        assert ce is True
+        assert ev is True
+        assert oc is True
+        assert dc == 3
+
+    def test_correct_but_suboptimal_path(self) -> None:
+        vp, ce, ev, oc, dc = _check_path([0, 2], self.graph, self.true_cost)
+        assert vp is True
+        assert ce is True
+        assert ev is True
+        assert oc is False
+        assert dc == 5
+
+    def test_cost_computed_from_edge_weights_not_from_any_token(self) -> None:
+        vp, ce, ev, oc, dc = _check_path([0, 1, 2], self.graph, true_cost=999)
+        assert dc == 3
+        assert oc is False
+
+    def test_valid_path_true_when_edges_valid_but_wrong_source(self) -> None:
+        vp, ce, ev, oc, dc = _check_path([1, 2], self.graph, self.true_cost)
+        assert ev is True
+        assert vp is True
+        assert ce is False
+
+    def test_valid_path_true_when_edges_valid_but_wrong_target(self) -> None:
+        vp, ce, ev, oc, dc = _check_path([0, 1], self.graph, self.true_cost)
+        assert ev is True
+        assert vp is True
+        assert ce is False
+
+    def test_invalid_edge_fails_edges_valid_and_valid_path(self) -> None:
+        graph4 = Graph(
+            num_nodes=4,
+            edges=[(0, 1, 1), (1, 2, 2), (2, 3, 3)],
+            source=0, target=3, seed=0,
+        )
+        vp, ce, ev, oc, dc = _check_path([0, 1, 3], graph4, true_cost=6)
+        assert ev is False
+        assert vp is False
+        assert dc is None
+
+    def test_repeated_nodes_fail_valid_path_but_not_edges_valid(self) -> None:
+        vp, ce, ev, oc, dc = _check_path([0, 1, 0, 1, 2], self.graph, self.true_cost)
+        assert ev is True
+        assert vp is False
+        assert ce is True
+        assert dc == 5
+        assert oc is False
+
+    def test_empty_path(self) -> None:
+        vp, ce, ev, oc, dc = _check_path([], self.graph, self.true_cost)
+        assert vp is False
+        assert ce is False
+        assert ev is False
+        assert oc is False
+        assert dc is None
+
+    def test_single_node_non_trivial_source_not_equal_target(self) -> None:
+        vp, ce, ev, oc, dc = _check_path([0], self.graph, self.true_cost)
+        assert vp is False
+        assert ev is False
+
+    def test_single_node_trivial_source_equals_target(self) -> None:
+        graph = Graph(
+            num_nodes=3,
+            edges=[(0, 1, 1), (1, 2, 2)],
+            source=1, target=1, seed=0,
+        )
+        vp, ce, ev, oc, dc = _check_path([1], graph, true_cost=0)
+        assert vp is True
+        assert ce is True
+        assert ev is True
+        assert oc is True
+        assert dc == 0
+
