@@ -582,3 +582,65 @@ class TestMalformedOutputRobustness:
         )
         assert result.valid_and_optimal is False
         assert result.valid_path is False
+
+
+
+class TestGreedyDecode:
+    def test_output_starts_with_bos(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tokenizer: GraphTokenizer,
+    ) -> None:
+        src_ids = torch.tensor([tokenizer.encode_graph(tiny_graph)])
+        raw = _greedy_decode(tiny_model, src_ids, tokenizer, DEVICE, max_decode_len=20)
+        assert len(raw) >= 1
+        assert raw[0] == tokenizer.bos_token_id
+
+    def test_output_length_bounded_by_max_decode_len(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tokenizer: GraphTokenizer,
+    ) -> None:
+        src_ids = torch.tensor([tokenizer.encode_graph(tiny_graph)])
+        max_len = 5
+        raw = _greedy_decode(tiny_model, src_ids, tokenizer, DEVICE, max_decode_len=max_len)
+        assert len(raw) <= max_len + 1
+
+    def test_stops_immediately_at_eos(self, tokenizer: GraphTokenizer) -> None:
+        class ImmediateEosModel(torch.nn.Module):
+            def encode(self, src_ids: torch.Tensor, src_mask=None) -> torch.Tensor:
+                B, S = src_ids.shape
+                return torch.zeros(B, S, 32)
+
+            def decode(self, tgt_ids: torch.Tensor, encoder_output: torch.Tensor,
+                       self_attn_mask=None, cross_attn_mask=None) -> torch.Tensor:
+                B, T = tgt_ids.shape
+                logits = torch.full((B, T, tokenizer.vocab_size), -1e9)
+                logits[:, :, tokenizer.eos_token_id] = 1e9
+                return logits
+
+        graph = generate_random_connected_graph(num_nodes=4, seed=0)
+        src_ids = torch.tensor([tokenizer.encode_graph(graph)])
+        raw = _greedy_decode(
+            ImmediateEosModel(), src_ids, tokenizer, DEVICE, max_decode_len=10
+        )
+        assert raw == [tokenizer.bos_token_id, tokenizer.eos_token_id]
+
+    def test_returns_list_of_ints(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tokenizer: GraphTokenizer,
+    ) -> None:
+        src_ids = torch.tensor([tokenizer.encode_graph(tiny_graph)])
+        raw = _greedy_decode(tiny_model, src_ids, tokenizer, DEVICE, max_decode_len=10)
+        assert isinstance(raw, list)
+        for tok in raw:
+            assert isinstance(tok, int)
+
+    def test_all_token_ids_in_vocab_range(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tokenizer: GraphTokenizer,
+    ) -> None:
+        src_ids = torch.tensor([tokenizer.encode_graph(tiny_graph)])
+        raw = _greedy_decode(tiny_model, src_ids, tokenizer, DEVICE, max_decode_len=20)
+        for tok in raw:
+            assert 0 <= tok < tokenizer.vocab_size, (
+                f"Token id {tok} is outside vocab range [0, {tokenizer.vocab_size})"
+            )
