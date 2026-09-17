@@ -12,3 +12,15 @@ from data.tokenizer import GraphTokenizer
 from model.model import Transformer
  
 _MAX_DECODE_LEN: int = 60
+
+@dataclass(frozen=True)
+class ExampleResult:
+  decoded_nodes : List[int]
+  edges_valid : bool
+  valid_path : bool
+  correct_endpoints:bool
+  optimal_cost:bool
+  valid_and_optimal : bool
+  decoded_cost: Optional[int]
+  true_cost : int
+  
