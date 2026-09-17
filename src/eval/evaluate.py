@@ -98,4 +98,28 @@ def _greedy_decode(
       if next_token_id == tokenizer.eos_token_id:
         break
   return generated
-    
+
+def _decode_token_sequence(
+  token_ids: List[int],
+  tokenizer:GraphTokenizer,
+)-> Optional[List[int]]:
+  if not token_ids:
+    return None
+  if token_ids[0]!= tokenizer.bos_token_id:
+    return None
+  nodes : List[int] = []
+  for tid in token_ids[1:]:
+    if tid == tokenizer.eos_token_id:
+      return nodes
+    tok = tokenizer.id_to_token.get(tid)
+    if tok is None:
+      return None
+    if not tok.startswith("node_"):
+      return None
+    try:
+      node_id = int(tok[len("node_")])
+    except ValueError:
+      return None
+    nodes.append(node_id)
+  return None
+
