@@ -76,3 +76,26 @@ class EvalResult:
       "num_valid_and_optimal": float(self.num_valid_and_optimal),
     }
     
+def _greedy_decode(
+  model: Transformer,
+  src_ids : torch.Tensor,
+  tokenizer : GraphTokenizer,
+  device : torch.device,
+  max_decode_len:int,
+)->List[int]:
+  model.eval()
+  with torch.no_grad():
+    src_ids = src_ids.to(device)
+    encoder_output = model.encode(src_ids)
+    generated : List[int] = [tokenizer.bos_token_id]
+    for _ in range(max_decode_len):
+      tgt_tensor = torch.tensor(
+        [generated],dtype=torch.lang,device = device
+      )
+      logits = model.decode(tgt_tensor,encoder_output)
+      next_token_id : int = int(logits[0,-1].argmax().item())
+      generated.append(next_token_id)
+      if next_token_id == tokenizer.eos_token_id:
+        break
+  return generated
+    
