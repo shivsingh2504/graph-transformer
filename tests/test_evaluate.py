@@ -123,3 +123,86 @@ class TestAPIAssumptions:
 
     def test_max_decode_len_default_value(self) -> None:
         assert _MAX_DECODE_LEN == 60
+
+
+class TestDecodeTokenSequence:
+    def test_valid_sequence_returns_nodes(self, tokenizer: GraphTokenizer) -> None:
+        ids = [
+            tokenizer.bos_token_id,
+            tokenizer.token_to_id["node_5"],
+            tokenizer.token_to_id["node_3"],
+            tokenizer.eos_token_id,
+        ]
+        assert _decode_token_sequence(ids, tokenizer) == [5, 3]
+
+    def test_missing_bos_returns_none(self, tokenizer: GraphTokenizer) -> None:
+        ids = [tokenizer.token_to_id["node_5"], tokenizer.eos_token_id]
+        assert _decode_token_sequence(ids, tokenizer) is None
+
+    def test_missing_eos_returns_none(self, tokenizer: GraphTokenizer) -> None:
+        ids = [tokenizer.bos_token_id, tokenizer.token_to_id["node_5"]]
+        assert _decode_token_sequence(ids, tokenizer) is None
+
+    def test_empty_sequence_returns_none(self, tokenizer: GraphTokenizer) -> None:
+        assert _decode_token_sequence([], tokenizer) is None
+
+    def test_bos_immediately_followed_by_eos_returns_empty_list(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        ids = [tokenizer.bos_token_id, tokenizer.eos_token_id]
+        result = _decode_token_sequence(ids, tokenizer)
+        assert result == []
+
+    def test_weight_token_in_path_region_returns_none(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        ids = [
+            tokenizer.bos_token_id,
+            tokenizer.token_to_id["weight_3"],
+            tokenizer.eos_token_id,
+        ]
+        assert _decode_token_sequence(ids, tokenizer) is None
+
+    def test_pad_token_in_path_region_returns_none(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        ids = [tokenizer.bos_token_id, tokenizer.pad_token_id, tokenizer.eos_token_id]
+        assert _decode_token_sequence(ids, tokenizer) is None
+
+    def test_src_token_in_path_region_returns_none(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        ids = [tokenizer.bos_token_id, tokenizer.src_token_id, tokenizer.eos_token_id]
+        assert _decode_token_sequence(ids, tokenizer) is None
+
+    def test_dst_token_in_path_region_returns_none(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        ids = [tokenizer.bos_token_id, tokenizer.dst_token_id, tokenizer.eos_token_id]
+        assert _decode_token_sequence(ids, tokenizer) is None
+
+    def test_completely_unknown_token_id_returns_none(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        ids = [tokenizer.bos_token_id, 99999, tokenizer.eos_token_id]
+        assert _decode_token_sequence(ids, tokenizer) is None
+
+    def test_sequence_of_multiple_nodes_correct_order(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        node_ids = [0, 3, 7, 12, 1]
+        ids = (
+            [tokenizer.bos_token_id]
+            + [tokenizer.token_to_id[f"node_{n}"] for n in node_ids]
+            + [tokenizer.eos_token_id]
+        )
+        assert _decode_token_sequence(ids, tokenizer) == node_ids
+
+    def test_tokens_after_eos_are_ignored(self, tokenizer: GraphTokenizer) -> None:
+        ids = [
+            tokenizer.bos_token_id,
+            tokenizer.token_to_id["node_2"],
+            tokenizer.eos_token_id,
+            tokenizer.token_to_id["node_9"],
+        ]
+        assert _decode_token_sequence(ids, tokenizer) == [2]
