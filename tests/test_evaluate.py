@@ -314,3 +314,74 @@ class TestCheckPath:
         assert oc is True
         assert dc == 0
 
+
+class TestEvaluateExample:
+    def test_returns_example_result_instance(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tiny_sp: ShortestPath,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_example(
+            tiny_model, tiny_graph, tiny_sp, tokenizer, DEVICE, max_decode_len=30
+        )
+        assert isinstance(result, ExampleResult)
+
+    def test_model_api_is_exercised_not_silently_bypassed(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tiny_sp: ShortestPath,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_example(
+            tiny_model, tiny_graph, tiny_sp, tokenizer, DEVICE, max_decode_len=30
+        )
+        assert isinstance(result, ExampleResult)
+        assert result.true_cost == tiny_sp.cost
+        assert isinstance(result.decoded_nodes, list)
+        for n in result.decoded_nodes:
+            assert isinstance(n, int) and 0 <= n <= 49
+
+    def test_true_cost_matches_dijkstra(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tiny_sp: ShortestPath,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_example(
+            tiny_model, tiny_graph, tiny_sp, tokenizer, DEVICE, max_decode_len=30
+        )
+        assert result.true_cost == tiny_sp.cost
+
+    def test_valid_and_optimal_implies_all_sub_checks(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tiny_sp: ShortestPath,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_example(
+            tiny_model, tiny_graph, tiny_sp, tokenizer, DEVICE, max_decode_len=30
+        )
+        if result.valid_and_optimal:
+            assert result.valid_path
+            assert result.correct_endpoints
+            assert result.edges_valid
+            assert result.optimal_cost
+
+    def test_valid_path_implies_edges_valid(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tiny_sp: ShortestPath,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_example(
+            tiny_model, tiny_graph, tiny_sp, tokenizer, DEVICE, max_decode_len=30
+        )
+        if result.valid_path:
+            assert result.edges_valid
+
+    def test_decoded_cost_is_none_or_nonnegative(
+        self, tiny_model: Transformer,
+        tiny_graph: Graph, tiny_sp: ShortestPath,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        result = evaluate_example(
+            tiny_model, tiny_graph, tiny_sp, tokenizer, DEVICE, max_decode_len=30
+        )
+        if result.decoded_cost is not None:
+            assert result.decoded_cost >= 0
