@@ -206,3 +206,22 @@ class TestDecodeTokenSequence:
             tokenizer.token_to_id["node_9"],
         ]
         assert _decode_token_sequence(ids, tokenizer) == [2]
+class TestBuildEdgeSet:
+    def test_undirected_edges_present(self) -> None:
+        graph = Graph(num_nodes=3, edges=[(0, 1, 2), (1, 2, 5)],
+                      source=0, target=2, seed=0)
+        es = _build_edge_set(graph)
+        assert (0, 1) in es
+        assert (1, 2) in es
+
+    def test_canonical_min_max_ordering(self) -> None:
+        graph = Graph(num_nodes=3, edges=[(2, 0, 3)], source=0, target=2, seed=0)
+        es = _build_edge_set(graph)
+        assert (0, 2) in es
+        assert (2, 0) not in es
+
+    def test_absent_edges_not_included(self) -> None:
+        graph = Graph(num_nodes=3, edges=[(0, 1, 1)], source=0, target=1, seed=0)
+        es = _build_edge_set(graph)
+        assert (0, 2) not in es
+        assert (1, 2) not in es
