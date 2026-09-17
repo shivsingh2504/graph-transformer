@@ -509,3 +509,76 @@ class TestEvalResultProperties:
         assert s["num_examples"] == pytest.approx(3.0)
         assert s["num_valid_and_optimal"] == pytest.approx(2.0)
         assert s["valid_and_optimal_fraction"] == pytest.approx(2 / 3)
+
+
+
+class TestMalformedOutputRobustness:
+    def test_no_eos_sequence_is_invalid(self, tokenizer: GraphTokenizer) -> None:
+        ids = [tokenizer.bos_token_id] + [tokenizer.token_to_id["node_0"]] * 30
+        assert _decode_token_sequence(ids, tokenizer) is None
+
+    def test_repeated_nodes_edges_valid_but_not_valid_path(self) -> None:
+        graph = Graph(
+            num_nodes=3,
+            edges=[(0, 1, 1), (1, 2, 2)],
+            source=0, target=2, seed=0,
+        )
+        vp, ce, ev, oc, dc = _check_path([0, 1, 0, 1, 2], graph, true_cost=3)
+        assert ev is True
+        assert vp is False
+        assert dc == 5
+
+    def test_out_of_range_token_id_returns_none(
+        self, tokenizer: GraphTokenizer
+    ) -> None:
+        ids = [tokenizer.bos_token_id, 65535, tokenizer.eos_token_id]
+        assert _decode_token_sequence(ids, tokenizer) is None
+
+    def test_evaluate_example_graceful_on_all_pad_output(
+        self,
+        tiny_graph: Graph, tiny_sp: ShortestPath,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        class AllPadModel(torch.nn.Module):
+            def encode(self, src_ids: torch.Tensor, src_mask=None) -> torch.Tensor:
+                B, S = src_ids.shape
+                return torch.zeros(B, S, 32)
+
+            def decode(self, tgt_ids: torch.Tensor, encoder_output: torch.Tensor,
+                       self_attn_mask=None, cross_attn_mask=None) -> torch.Tensor:
+                B, T = tgt_ids.shape
+                logits = torch.full((B, T, tokenizer.vocab_size), -1e9)
+                logits[:, :, tokenizer.pad_token_id] = 1e9
+                return logits
+
+        result = evaluate_example(
+            AllPadModel(), tiny_graph, tiny_sp, tokenizer, DEVICE,
+            max_decode_len=10,
+        )
+        assert result.valid_and_optimal is False
+        assert result.valid_path is False
+        assert result.edges_valid is False
+
+    def test_evaluate_example_graceful_on_never_eos(
+        self,
+        tiny_graph: Graph, tiny_sp: ShortestPath,
+        tokenizer: GraphTokenizer,
+    ) -> None:
+        class NeverEosModel(torch.nn.Module):
+            def encode(self, src_ids: torch.Tensor, src_mask=None) -> torch.Tensor:
+                B, S = src_ids.shape
+                return torch.zeros(B, S, 32)
+
+            def decode(self, tgt_ids: torch.Tensor, encoder_output: torch.Tensor,
+                       self_attn_mask=None, cross_attn_mask=None) -> torch.Tensor:
+                B, T = tgt_ids.shape
+                logits = torch.full((B, T, tokenizer.vocab_size), -1e9)
+                logits[:, :, tokenizer.token_to_id["node_0"]] = 1e9
+                return logits
+
+        result = evaluate_example(
+            NeverEosModel(), tiny_graph, tiny_sp, tokenizer, DEVICE,
+            max_decode_len=5,
+        )
+        assert result.valid_and_optimal is False
+        assert result.valid_path is False
