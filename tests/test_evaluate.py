@@ -59,3 +59,67 @@ def tiny_split() -> DatasetSplit:
     return generate_dataset_split(
         num_examples=10, node_range=(4, 6), base_seed=2, edge_density=0.5
     )
+
+
+
+class TestAPIAssumptions:
+    def test_transformer_has_encode_method(self, tiny_model: Transformer) -> None:
+        assert hasattr(tiny_model, "encode")
+        assert callable(tiny_model.encode)
+
+    def test_transformer_has_decode_method(self, tiny_model: Transformer) -> None:
+        assert hasattr(tiny_model, "decode")
+        assert callable(tiny_model.decode)
+
+    def test_transformer_encode_returns_3d_tensor(
+        self, tiny_model: Transformer, tiny_graph: Graph, tokenizer: GraphTokenizer
+    ) -> None:
+        src_ids = torch.tensor([tokenizer.encode_graph(tiny_graph)]).to(DEVICE)
+        with torch.no_grad():
+            enc = tiny_model.encode(src_ids)
+        assert isinstance(enc, torch.Tensor)
+        assert enc.ndim == 3
+
+    def test_transformer_decode_returns_logit_tensor(
+        self, tiny_model: Transformer, tiny_graph: Graph, tokenizer: GraphTokenizer
+    ) -> None:
+        src_ids = torch.tensor([tokenizer.encode_graph(tiny_graph)]).to(DEVICE)
+        tgt_ids = torch.tensor([[tokenizer.bos_token_id]]).to(DEVICE)
+        with torch.no_grad():
+            enc = tiny_model.encode(src_ids)
+            logits = tiny_model.decode(tgt_ids, enc)
+        assert isinstance(logits, torch.Tensor)
+        assert logits.ndim == 3
+        assert logits.shape[-1] == tokenizer.vocab_size
+
+    def test_graph_has_adjacency_method(self, tiny_graph: Graph) -> None:
+        assert hasattr(tiny_graph, "adjacency")
+        assert callable(tiny_graph.adjacency)
+
+    def test_graph_adjacency_returns_correct_structure(self, tiny_graph: Graph) -> None:
+        adj = tiny_graph.adjacency()
+        assert isinstance(adj, dict)
+        for node_id in range(tiny_graph.num_nodes):
+            assert node_id in adj
+        for neighbours in adj.values():
+            for item in neighbours:
+                assert len(item) == 2
+                neighbour, weight = item
+                assert isinstance(neighbour, int)
+                assert isinstance(weight, int)
+                assert weight >= 1
+
+    def test_adjacency_is_symmetric(self, tiny_graph: Graph) -> None:
+        adj = tiny_graph.adjacency()
+        for u, v, w in tiny_graph.edges:
+            u_in_v = any(nbr == u and wt == w for nbr, wt in adj[v])
+            assert u_in_v, (
+                f"Edge ({u},{v},{w}): {u} with weight {w} not found in adj[{v}]"
+            )
+            v_in_u = any(nbr == v and wt == w for nbr, wt in adj[u])
+            assert v_in_u, (
+                f"Edge ({u},{v},{w}): {v} with weight {w} not found in adj[{u}]"
+            )
+
+    def test_max_decode_len_default_value(self) -> None:
+        assert _MAX_DECODE_LEN == 60
