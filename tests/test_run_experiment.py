@@ -84,4 +84,43 @@ class TestSeedValidation:
             **_TINY_TRAIN_KWARGS,
         )
         assert result is not None
+
+class TestReturnedDictStructure:
+    @pytest.fixture(scope="class")
+    def result(self):
+        return run_experiment(
+            num_train_examples=8,
+            num_eval_examples=4,
+            n_epochs=2,
+            train_seed=10,
+            eval_seed=20,
+            **_TINY_TRAIN_KWARGS,
+        )
  
+    def test_top_level_keys_present(self, result) -> None:
+        assert set(result.keys()) == {"train_loss", "val_loss", "eval_summary", "gate_passed"}
+ 
+    def test_train_loss_is_list_of_floats(self, result) -> None:
+        assert isinstance(result["train_loss"], list)
+        assert all(isinstance(v, float) for v in result["train_loss"])
+ 
+    def test_val_loss_is_list_of_floats(self, result) -> None:
+        assert isinstance(result["val_loss"], list)
+        assert all(isinstance(v, float) for v in result["val_loss"])
+ 
+    def test_train_loss_length_matches_n_epochs(self, result) -> None:
+        assert len(result["train_loss"]) == 2
+ 
+    def test_val_loss_length_matches_n_epochs(self, result) -> None:
+        assert len(result["val_loss"]) == 2
+ 
+    def test_eval_summary_is_dict_of_floats(self, result) -> None:
+        s = result["eval_summary"]
+        assert isinstance(s, dict)
+        assert all(isinstance(v, float) for v in s.values())
+ 
+    def test_eval_summary_contains_valid_and_optimal_fraction(self, result) -> None:
+        assert "valid_and_optimal_fraction" in result["eval_summary"]
+ 
+    def test_gate_passed_is_bool(self, result) -> None:
+        assert isinstance(result["gate_passed"], bool)
