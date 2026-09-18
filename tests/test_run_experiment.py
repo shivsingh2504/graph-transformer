@@ -199,3 +199,80 @@ class TestSplitSeedIsolation:
         graph_b, _ = split_b.examples[0]
         assert graph_a.num_nodes == graph_b.num_nodes
         assert sorted(graph_a.edges) == sorted(graph_b.edges)
+
+class TestGradClipping:
+    def test_grad_norm_bounded_after_clipping(self) -> None:
+        tokenizer = GraphTokenizer(min_weight=1, max_weight=10)
+        split = generate_dataset_split(
+            num_examples=8, node_range=(5, 8), base_seed=42, edge_density=0.5
+        )
+        model = _tiny_model(tokenizer.vocab_size)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+        criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
+        loader = make_dataloader(split, tokenizer, batch_size=4, shuffle=False)
+ 
+        src, tgt = next(iter(loader))
+        src = src.to(DEVICE)
+        tgt = tgt.to(DEVICE)
+ 
+        decoder_input = tgt[:, :-1]
+        target_output = tgt[:, 1:]
+        src_mask, tgt_self, cross = _make_masks(
+            src, decoder_input, criterion.ignore_index
+        )
+ 
+        model.train()
+        optimizer.zero_grad()
+ 
+        logits = model(
+            src, decoder_input,
+            src_mask=src_mask,
+            tgt_self_attn_mask=tgt_self,
+            tgt_cross_attn_mask=cross,
+        )
+        loss = criterion(logits.reshape(-1, logits.size(-1)), target_output.reshape(-1))
+ 
+        inflated_loss = loss * 1e6
+        inflated_loss.backward()
+ 
+        pre_clip_norm = _global_grad_norm(model)
+        assert pre_clip_norm > 10.0, (
+            f"Pre-clip gradient norm is only {pre_clip_norm:.4f}; "
+            "loss inflation did not produce large enough gradients — "
+            "this test would not meaningfully exercise clipping."
+        )
+ 
+        max_norm = 1.0
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_norm)
+ 
+        post_clip_norm = _global_grad_norm(model)
+        assert post_clip_norm <= max_norm + 1e-5, (
+            f"Post-clip global gradient norm {post_clip_norm:.6f} "
+            f"exceeds max_norm={max_norm}. Gradient clipping is not working."
+        )
+ 
+    def test_train_epoch_applies_grad_clip_via_function(self) -> None:
+        tokenizer = GraphTokenizer(min_weight=1, max_weight=10)
+        split = generate_dataset_split(
+            num_examples=8, node_range=(5, 8), base_seed=99, edge_density=0.5
+        )
+        criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
+        loader = make_dataloader(split, tokenizer, batch_size=8, shuffle=False)
+ 
+        model = _tiny_model(tokenizer.vocab_size)
+        optimizer = torch.optim.SGD(model.parameters(), lr=1e4)
+ 
+        loss_val = _train_epoch(
+            model, loader, optimizer, criterion, DEVICE,
+            grad_clip_norm=1.0,
+        )
+ 
+        assert torch.isfinite(torch.tensor(loss_val)), (
+            f"_train_epoch returned non-finite loss {loss_val} even with "
+            "grad_clip_norm=1.0 applied."
+        )
+        for name, p in model.named_parameters():
+            assert torch.isfinite(p.data).all(), (
+                f"Parameter '{name}' contains non-finite values after "
+                "_train_epoch with grad_clip_norm=1.0."
+            )
