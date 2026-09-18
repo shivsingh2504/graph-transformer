@@ -29,3 +29,23 @@ _TINY_TRAIN_KWARGS = dict(
     device=DEVICE,
 )
  
+ def _tiny_model(vocab_size: int) -> Transformer:
+    return Transformer(
+        vocab_size=vocab_size,
+        n_layers=1,
+        d_model=32,
+        n_heads=4,
+        d_ff=64,
+        dropout=0.0,
+    ).to(DEVICE)
+ 
+ 
+def _global_grad_norm(model: Transformer) -> float:
+    return torch.sqrt(
+        sum(
+            p.grad.detach().norm() ** 2
+            for p in model.parameters()
+            if p.grad is not None
+        )
+    ).item()
+ 
