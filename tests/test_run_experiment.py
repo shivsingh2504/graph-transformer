@@ -124,3 +124,42 @@ class TestReturnedDictStructure:
  
     def test_gate_passed_is_bool(self, result) -> None:
         assert isinstance(result["gate_passed"], bool)
+
+class TestTinyEndToEnd:
+    def test_completes_without_error_and_fraction_in_unit_interval(self) -> None:
+        result = run_experiment(
+            num_train_examples=8,
+            num_eval_examples=4,
+            n_epochs=1,
+            train_seed=100,
+            eval_seed=200,
+            **_TINY_TRAIN_KWARGS,
+        )
+        vof = result["eval_summary"]["valid_and_optimal_fraction"]
+        assert 0.0 <= vof <= 1.0, f"valid_and_optimal_fraction out of [0,1]: {vof}"
+ 
+    def test_gate_passed_consistent_with_fraction(self) -> None:
+        result = run_experiment(
+            num_train_examples=8,
+            num_eval_examples=4,
+            n_epochs=1,
+            train_seed=101,
+            eval_seed=202,
+            **_TINY_TRAIN_KWARGS,
+        )
+        vof = result["eval_summary"]["valid_and_optimal_fraction"]
+        assert result["gate_passed"] == (vof >= 0.90)
+ 
+    def test_losses_are_finite(self) -> None:
+        result = run_experiment(
+            num_train_examples=8,
+            num_eval_examples=4,
+            n_epochs=2,
+            train_seed=102,
+            eval_seed=203,
+            **_TINY_TRAIN_KWARGS,
+        )
+        for loss_val in result["train_loss"] + result["val_loss"]:
+            assert torch.isfinite(torch.tensor(loss_val)), (
+                f"Non-finite loss encountered: {loss_val}"
+            )
