@@ -29,7 +29,7 @@ _TINY_TRAIN_KWARGS = dict(
     device=DEVICE,
 )
  
- def _tiny_model(vocab_size: int) -> Transformer:
+def _tiny_model(vocab_size: int) -> Transformer:
     return Transformer(
         vocab_size=vocab_size,
         n_layers=1,
@@ -48,4 +48,40 @@ def _global_grad_norm(model: Transformer) -> float:
             if p.grad is not None
         )
     ).item()
+ 
+
+class TestSeedValidation:
+    def test_raises_when_seeds_equal(self) -> None:
+        with pytest.raises(ValueError, match="train_seed and eval_seed must differ"):
+            run_experiment(
+                num_train_examples=4,
+                num_eval_examples=4,
+                n_epochs=1,
+                train_seed=42,
+                eval_seed=42,
+                **_TINY_TRAIN_KWARGS,
+            )
+ 
+    def test_raises_when_n_epochs_in_kwargs(self) -> None:
+        with pytest.raises(ValueError, match="'n_epochs' must be passed"):
+            run_experiment(
+                num_train_examples=4,
+                num_eval_examples=4,
+                n_epochs=1,
+                train_seed=0,
+                eval_seed=1,
+                n_epochs=2,
+                **{**_TINY_TRAIN_KWARGS, "n_epochs": 2},
+            )
+ 
+    def test_does_not_raise_when_seeds_differ(self) -> None:
+        result = run_experiment(
+            num_train_examples=4,
+            num_eval_examples=4,
+            n_epochs=1,
+            train_seed=0,
+            eval_seed=1,
+            **_TINY_TRAIN_KWARGS,
+        )
+        assert result is not None
  
