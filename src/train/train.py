@@ -12,9 +12,6 @@ from data.tokenizer import GraphTokenizer
 from model.layers import create_causal_mask, create_padding_mask
 from model.model import Transformer
 
-# ---------------------------------------------------------------------------
-# Locked hyper-parameters (M6 spec)
-# ---------------------------------------------------------------------------
 _D_MODEL: int = 128
 _N_HEADS: int = 4
 _N_LAYERS: int = 3
@@ -26,10 +23,6 @@ _WARMUP_STEPS: int = 400
 _BATCH_SIZE: int = 32
 
 
-# ---------------------------------------------------------------------------
-# Scheduler
-# ---------------------------------------------------------------------------
-
 def _linear_warmup_schedule(step: int, warmup_steps: int) -> float:
     if warmup_steps <= 0:
         return 1.0
@@ -37,10 +30,6 @@ def _linear_warmup_schedule(step: int, warmup_steps: int) -> float:
         return float(step + 1) / float(warmup_steps)
     return 1.0
 
-
-# ---------------------------------------------------------------------------
-# PyTorch Dataset wrapper
-# ---------------------------------------------------------------------------
 
 class GraphPathDataset(Dataset):
     def __init__(self, split: DatasetSplit, tokenizer: GraphTokenizer) -> None:
@@ -90,10 +79,6 @@ def make_dataloader(
     )
 
 
-# ---------------------------------------------------------------------------
-# Mask construction
-# ---------------------------------------------------------------------------
-
 def _make_masks(
     src: torch.Tensor,
     decoder_input: torch.Tensor,
@@ -102,18 +87,14 @@ def _make_masks(
     device = src.device
     tgt_len = decoder_input.size(1)
 
-    src_mask = create_padding_mask(src, pad_id)                   # (B, 1, 1, src_len)
-    tgt_pad_mask = create_padding_mask(decoder_input, pad_id)     # (B, 1, 1, tgt_len)
-    causal_mask = create_causal_mask(tgt_len, device=device)      # (1, 1, tgt_len, tgt_len)
-    tgt_self_attn_mask = causal_mask & tgt_pad_mask               # (B, 1, tgt_len, tgt_len)
-    tgt_cross_attn_mask = src_mask                                # (B, 1, 1, src_len)
+    src_mask = create_padding_mask(src, pad_id)
+    tgt_pad_mask = create_padding_mask(decoder_input, pad_id)
+    causal_mask = create_causal_mask(tgt_len, device=device)
+    tgt_self_attn_mask = causal_mask & tgt_pad_mask
+    tgt_cross_attn_mask = src_mask
 
     return src_mask, tgt_self_attn_mask, tgt_cross_attn_mask
 
-
-# ---------------------------------------------------------------------------
-# Single epoch helpers
-# ---------------------------------------------------------------------------
 
 def _train_epoch(
     model: Transformer,
@@ -122,6 +103,8 @@ def _train_epoch(
     criterion: nn.CrossEntropyLoss,
     device: torch.device,
     scheduler: LambdaLR | None = None,
+    *,
+    grad_clip_norm: float = 1.0,
 ) -> float:
     model.train()
     total_loss = 0.0
@@ -131,8 +114,8 @@ def _train_epoch(
         src = src.to(device)
         tgt = tgt.to(device)
 
-        decoder_input = tgt[:, :-1]   # (B, T-1)
-        target_output = tgt[:, 1:]    # (B, T-1)
+        decoder_input = tgt[:, :-1]
+        target_output = tgt[:, 1:]
 
         src_mask, tgt_self_attn_mask, tgt_cross_attn_mask = _make_masks(
             src, decoder_input, criterion.ignore_index
@@ -146,7 +129,7 @@ def _train_epoch(
             src_mask=src_mask,
             tgt_self_attn_mask=tgt_self_attn_mask,
             tgt_cross_attn_mask=tgt_cross_attn_mask,
-        )  # (B, T-1, vocab_size)
+        )
 
         loss = criterion(
             logits.reshape(-1, logits.size(-1)),
@@ -154,6 +137,7 @@ def _train_epoch(
         )
 
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_norm)
         optimizer.step()
         if scheduler is not None:
             scheduler.step()
@@ -205,10 +189,6 @@ def _val_epoch(
     return total_loss / n_batches if n_batches > 0 else 0.0
 
 
-# ---------------------------------------------------------------------------
-# Top-level training function
-# ---------------------------------------------------------------------------
-
 def train_model(
     train_split: DatasetSplit,
     val_split: DatasetSplit,
@@ -224,6 +204,7 @@ def train_model(
     n_heads: int = _N_HEADS,
     d_ff: int = _D_FF,
     dropout: float = _DROPOUT,
+    grad_clip_norm: float = 1.0,
     device: torch.device | None = None,
 ) -> Tuple[Transformer, Dict[str, List[float]]]:
     if device is None:
@@ -258,7 +239,8 @@ def train_model(
 
     for epoch in range(1, n_epochs + 1):
         train_loss = _train_epoch(
-            model, train_loader, optimizer, criterion, device, scheduler
+            model, train_loader, optimizer, criterion, device, scheduler,
+            grad_clip_norm=grad_clip_norm,
         )
         val_loss = _val_epoch(model, val_loader, criterion, device)
 
