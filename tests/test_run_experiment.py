@@ -163,3 +163,39 @@ class TestTinyEndToEnd:
             assert torch.isfinite(torch.tensor(loss_val)), (
                 f"Non-finite loss encountered: {loss_val}"
             )
+            
+class TestSplitSeedIsolation:
+    def test_first_graphs_differ_when_seeds_differ(self) -> None:
+        train_split = generate_dataset_split(
+            num_examples=4,
+            node_range=(5, 20),
+            base_seed=0,
+        )
+        eval_split = generate_dataset_split(
+            num_examples=4,
+            node_range=(5, 20),
+            base_seed=1,
+        )
+        train_graph, _ = train_split.examples[0]
+        eval_graph, _ = eval_split.examples[0]
+ 
+        graphs_identical = (
+            train_graph.num_nodes == eval_graph.num_nodes
+            and sorted(train_graph.edges) == sorted(eval_graph.edges)
+        )
+        assert not graphs_identical, (
+            "First graph in train split and eval split are identical even though "
+            "different base_seeds were used — seed isolation is broken."
+        )
+ 
+    def test_same_seed_produces_same_first_graph(self) -> None:
+        split_a = generate_dataset_split(
+            num_examples=2, node_range=(5, 20), base_seed=7
+        )
+        split_b = generate_dataset_split(
+            num_examples=2, node_range=(5, 20), base_seed=7
+        )
+        graph_a, _ = split_a.examples[0]
+        graph_b, _ = split_b.examples[0]
+        assert graph_a.num_nodes == graph_b.num_nodes
+        assert sorted(graph_a.edges) == sorted(graph_b.edges)
