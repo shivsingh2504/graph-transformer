@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import os
 import sys
 
@@ -489,3 +490,81 @@ class TestOverfitSingleBatch:
             f"expected < 0.5. The training loop may be broken (wrong masks, "
             f"disconnected gradients, etc.)."
         )
+
+
+# ---------------------------------------------------------------------------
+# 12. Default-value assertions
+# ---------------------------------------------------------------------------
+
+class TestDefaultValues:
+    def test_train_model_defaults(self) -> None:
+        sig = inspect.signature(train_model)
+        p = sig.parameters
+        assert p["dropout"].default == 0.0
+        assert p["warmup_steps"].default == 4000
+        assert p["lr"].default == pytest.approx(1e-4)
+        assert p["weight_decay"].default == pytest.approx(0.01)
+        assert p["batch_size"].default == 32
+        assert p["n_layers"].default == 3
+        assert p["d_model"].default == 128
+        assert p["n_heads"].default == 4
+        assert p["d_ff"].default == 512
+        assert p["grad_clip_norm"].default == pytest.approx(1.0)
+
+    def test_transformer_default_dropout(self) -> None:
+        sig = inspect.signature(Transformer)
+        assert sig.parameters["dropout"].default == 0.0
+
+
+# ---------------------------------------------------------------------------
+# 13. on_epoch_end hook
+# ---------------------------------------------------------------------------
+
+class TestOnEpochEndHook:
+    def test_called_exactly_n_times_with_correct_args(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, val_split = tiny_splits
+        n_epochs = 3
+        calls: list = []
+
+        def spy(epoch: int, model: nn.Module, history: dict) -> None:
+            calls.append({
+                "epoch": epoch,
+                "train_len": len(history["train_loss"]),
+                "val_len": len(history["val_loss"]),
+            })
+
+        train_model(
+            train_split, val_split, tokenizer,
+            n_epochs=n_epochs, batch_size=8, lr=1e-3, warmup_steps=4,
+            n_layers=1, d_model=32, n_heads=4, d_ff=64, dropout=0.0,
+            device=DEVICE, on_epoch_end=spy,
+        )
+
+        assert len(calls) == n_epochs, (
+            f"on_epoch_end called {len(calls)} times, expected {n_epochs}"
+        )
+        for i, call in enumerate(calls, start=1):
+            assert call["epoch"] == i, (
+                f"Call {i}: epoch={call['epoch']!r}, expected {i}"
+            )
+            assert call["train_len"] == i, (
+                f"Call {i}: train_loss length={call['train_len']}, expected {i}"
+            )
+            assert call["val_len"] == i, (
+                f"Call {i}: val_loss length={call['val_len']}, expected {i}"
+            )
+
+    def test_not_called_when_none(
+        self, tokenizer: GraphTokenizer, tiny_splits
+    ) -> None:
+        train_split, val_split = tiny_splits
+        model, history = train_model(
+            train_split, val_split, tokenizer,
+            n_epochs=1, batch_size=8, lr=1e-3, warmup_steps=4,
+            n_layers=1, d_model=32, n_heads=4, d_ff=64, dropout=0.0,
+            device=DEVICE, on_epoch_end=None,
+        )
+        assert len(history["train_loss"]) == 1
+        assert len(history["val_loss"]) == 1

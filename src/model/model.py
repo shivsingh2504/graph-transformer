@@ -12,7 +12,7 @@ _D_MODEL: int = 128
 _N_HEADS: int = 4
 _N_LAYERS: int = 3
 _D_FF: int = 512
-_DROPOUT: float = 0.1
+_DROPOUT: float = 0.0
 
 
 class EncoderLayer(nn.Module):

@@ -2,7 +2,8 @@
 __pycache__/
 *.pyc
 .vscode/
-data/
+/data/
 checkpoints/
 *.pt
 *.pth
+run.log
