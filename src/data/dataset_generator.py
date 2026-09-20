@@ -65,12 +65,13 @@ def generate_dataset_split(
     per_ex_seed : int = base_seed * _SEED_MULTIPLIER + i
     node_rng = random.Random(per_ex_seed)
     num_nodes : int  = node_rng.randint(min_nodes,max_nodes)
+    # Calculate dynamic edge count per Run 3 lock
+    dynamic_edges = min(3 * num_nodes, num_nodes * (num_nodes - 1) // 2)
     
     graph : Graph = generate_random_connected_graph(
-      num_edges=num_edges,
+      num_edges=dynamic_edges,
       seed = per_ex_seed,
       num_nodes=num_nodes,
-      edge_density=edge_density,
       min_weight=min_weight,
       max_weight=max_weight,
     )

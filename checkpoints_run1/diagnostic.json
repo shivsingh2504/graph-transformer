@@ -1,0 +1,112 @@
+{
+  "train_dist_accuracy": 0.737,
+  "id_eval_accuracy": 0.629,
+  "gap": 0.10799999999999998,
+  "verdict": "MIXED (modest gap; both effects may contribute)",
+  "failures_by_node_count": {
+    "5": {
+      "total": 64,
+      "failures": 2
+    },
+    "6": {
+      "total": 69,
+      "failures": 3
+    },
+    "7": {
+      "total": 61,
+      "failures": 2
+    },
+    "8": {
+      "total": 66,
+      "failures": 15
+    },
+    "9": {
+      "total": 44,
+      "failures": 8
+    },
+    "10": {
+      "total": 54,
+      "failures": 15
+    },
+    "11": {
+      "total": 63,
+      "failures": 15
+    },
+    "12": {
+      "total": 64,
+      "failures": 23
+    },
+    "13": {
+      "total": 60,
+      "failures": 22
+    },
+    "14": {
+      "total": 56,
+      "failures": 31
+    },
+    "15": {
+      "total": 73,
+      "failures": 32
+    },
+    "16": {
+      "total": 71,
+      "failures": 42
+    },
+    "17": {
+      "total": 74,
+      "failures": 44
+    },
+    "18": {
+      "total": 72,
+      "failures": 37
+    },
+    "19": {
+      "total": 49,
+      "failures": 33
+    },
+    "20": {
+      "total": 60,
+      "failures": 47
+    }
+  },
+  "failures_by_path_length": {
+    "2": {
+      "total": 213,
+      "failures": 24
+    },
+    "3": {
+      "total": 230,
+      "failures": 53
+    },
+    "4": {
+      "total": 212,
+      "failures": 71
+    },
+    "5": {
+      "total": 170,
+      "failures": 97
+    },
+    "6": {
+      "total": 102,
+      "failures": 66
+    },
+    "7": {
+      "total": 53,
+      "failures": 43
+    },
+    "8": {
+      "total": 16,
+      "failures": 13
+    },
+    "9": {
+      "total": 4,
+      "failures": 4
+    }
+  },
+  "failure_modes": {
+    "NON_EDGE_HOP": 282,
+    "REPEATED_NODE": 82,
+    "WRONG_ENDPOINT": 4,
+    "PREMATURE_EOS": 3
+  }
+}

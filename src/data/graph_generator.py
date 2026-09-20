@@ -10,9 +10,14 @@ class Graph:
   source : int
   target : int
   seed : int
+  node_ids : List[int] = None
   
+  def __post_init__(self):
+      if self.node_ids is None:
+          self.node_ids = list(range(self.num_nodes))
+          
   def adjacency(self) -> Dict[int,List[Tuple[int,int]]]:
-    adj : Dict[int,List[Tuple[int,int]]] = {i:[] for i in range(self.num_nodes)}
+    adj : Dict[int,List[Tuple[int,int]]] = {i:[] for i in self.node_ids}
     for u,v,w in self.edges:
       adj[u].append((v,w))
       adj[v].append((u,w))
@@ -24,7 +29,8 @@ class Graph:
       "edges":[[u,v,w]for u,v,w in self.edges],
       "source":self.source,
       "target":self.target,
-      "seed":self.seed
+      "seed":self.seed,
+      "node_ids": self.node_ids
     }
 
 def _build_spanning_tree(node_order : List[int],rng:random.Random,min_weight:int,max_weight:int)-> Tuple[Set[Tuple[int, int]], List[Tuple[int, int, int]]]:
@@ -177,12 +183,21 @@ def generate_random_connected_graph(
 
     source, target = _resolve_endpoints(num_nodes, source, target, rng)
 
+    # Relabel nodes to a random subset of 0..49
+    sampled_ids = sorted(rng.sample(range(50), num_nodes))
+    relabel_map = {i: sampled_ids[i] for i in range(num_nodes)}
+    
+    relabeled_edges = [(relabel_map[u], relabel_map[v], w) for u, v, w in edges]
+    relabeled_source = relabel_map[source]
+    relabeled_target = relabel_map[target]
+
     return Graph(
         num_nodes=num_nodes,
-        edges=edges,
-        source=source,
-        target=target,
+        edges=relabeled_edges,
+        source=relabeled_source,
+        target=relabeled_target,
         seed=seed,
+        node_ids=sampled_ids,
     )
 
 

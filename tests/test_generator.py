@@ -9,16 +9,17 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest 
 from src.data.graph_generator import Graph,generate_random_connected_graph
 
-def _is_connected(num_nodes:int,edges:List[Tuple[int,int,int]])->bool:
-  if num_nodes == 0 :
+def _is_connected(graph: Graph)->bool:
+  if graph.num_nodes == 0 :
     return True
-  adj = {i:[] for i in range(num_nodes)}
+  adj = {i:[] for i in graph.node_ids}
   
-  for u,v,_ in edges:
+  for u,v,_ in graph.edges:
     adj[u].append(v)
     adj[v].append(u)
-  visited={0}
-  queue = deque([0])
+  start_node = graph.node_ids[0]
+  visited={start_node}
+  queue = deque([start_node])
   
   while queue:
     node = queue.popleft()
@@ -26,7 +27,7 @@ def _is_connected(num_nodes:int,edges:List[Tuple[int,int,int]])->bool:
       if nb not in visited:
         visited.add(nb)
         queue.append(nb)
-  return len(visited) == num_nodes
+  return len(visited) == graph.num_nodes
 
 def _max_edges(n:int)->int:
   return n*(n-1) // 2
@@ -68,22 +69,22 @@ class TestConnectivity:
   @pytest.mark.parametrize("seed", range(20))
   def test_spanning_tree_connected(self,seed:int)->None:
     g = generate_random_connected_graph(10, seed)
-    assert _is_connected(g.num_nodes, g.edges)
+    assert _is_connected(g)
   @pytest.mark.parametrize("density", [0.1, 0.3, 0.5, 0.75, 1.0])
   @pytest.mark.parametrize("seed", [0, 7, 42])
   def test_density_connected(self,density:float,seed:int)->None:
     g = generate_random_connected_graph(15,seed,edge_density=density)
-    assert _is_connected(g.num_nodes,g.edges)
+    assert _is_connected(g)
     
   @pytest.mark.parametrize("seed", range(10))
   def test_full_density_connected(self,seed:int)->None:
     g = generate_random_connected_graph(8,seed,edge_density=1.0)
-    assert _is_connected(g.num_nodes,g.edges)
+    assert _is_connected(g)
     
   @pytest.mark.parametrize("seed", range(10))
   def test_explicit_num_edges_connected(self,seed:int)->None:
     g = generate_random_connected_graph(12,seed,num_edges=20)
-    assert _is_connected(g.num_nodes,g.edges)
+    assert _is_connected(g)
   
 
 class TestNodeValidity:
@@ -117,8 +118,8 @@ class TestNodeValidity:
       )
 
       for u, v, _ in g.edges:
-          assert 0 <= u < g.num_nodes
-          assert 0 <= v < g.num_nodes
+          assert u in g.node_ids
+          assert v in g.node_ids
   @pytest.mark.parametrize("seed", range(10))
   def test_canonical_ordering_density_mode(self, seed: int) -> None:
       g = generate_random_connected_graph(
@@ -242,7 +243,7 @@ class TestEdgeCount:
         )
 
         assert len(g.edges) == n - 1
-        assert _is_connected(g.num_nodes, g.edges)
+        assert _is_connected(g)
 
     def test_num_edges_at_exact_maximum_valid(self) -> None:
         n = 6
@@ -367,8 +368,8 @@ class TestSourceTarget:
             seed
         )
 
-        assert 0 <= g.source < g.num_nodes
-        assert 0 <= g.target < g.num_nodes
+        assert g.source in g.node_ids
+        assert g.target in g.node_ids
 
     def test_explicit_source_respected(self) -> None:
         g = generate_random_connected_graph(
@@ -377,7 +378,7 @@ class TestSourceTarget:
             source=3
         )
 
-        assert g.source == 3
+        assert g.source == g.node_ids[3]
 
     def test_explicit_target_respected(self) -> None:
         g = generate_random_connected_graph(
@@ -386,7 +387,7 @@ class TestSourceTarget:
             target=7
         )
 
-        assert g.target == 7
+        assert g.target == g.node_ids[7]
 
     def test_explicit_both_respected(self) -> None:
         g = generate_random_connected_graph(
@@ -396,8 +397,8 @@ class TestSourceTarget:
             target=8
         )
 
-        assert g.source == 2
-        assert g.target == 8
+        assert g.source == g.node_ids[2]
+        assert g.target == g.node_ids[8]
 
     def test_source_equals_target_raises(self) -> None:
         with pytest.raises(ValueError, match="source and target"):
@@ -467,7 +468,7 @@ class TestNumNodes:
 
         u, v, w = g.edges[0]
 
-        assert {u, v} == {0, 1}
+        assert {u, v}.issubset(set(g.node_ids))
         assert 1 <= w <= 10
 
 
@@ -503,7 +504,8 @@ class TestGraphMethods:
             "edges",
             "source",
             "target",
-            "seed"
+            "seed",
+            "node_ids"
         }
 
     def test_to_dict_num_nodes(
@@ -559,7 +561,7 @@ class TestGraphMethods:
         adj = sample_graph.adjacency()
 
         assert set(adj.keys()) == set(
-            range(sample_graph.num_nodes)
+            sample_graph.node_ids
         )
 
     def test_adjacency_symmetric(
@@ -595,5 +597,5 @@ class TestGraphMethods:
 
         adj = g.adjacency()
 
-        for node in range(g.num_nodes):
+        for node in g.node_ids:
             assert node in adj

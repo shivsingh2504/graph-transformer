@@ -272,7 +272,7 @@ class TestPathValidity:
     def test_path_nodes_in_range(self, seed: int) -> None:
         g = generate_random_connected_graph(12, seed, edge_density=0.5)
         for node in run_dijkstra(g).path:
-            assert 0 <= node < g.num_nodes
+            assert node in g.node_ids
 
     @pytest.mark.parametrize("seed", range(15))
     def test_path_is_simple_no_repeated_nodes(self, seed: int) -> None:

@@ -164,7 +164,7 @@ def run(cfg: RunConfig, out_dir: Path) -> Dict[str, Any]:
 
 
 def main() -> None:
-    run(RunConfig(), Path("checkpoints"))
+    run(RunConfig(), Path("checkpoints_run3"))
 
 
 if __name__ == "__main__":
