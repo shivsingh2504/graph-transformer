@@ -26,7 +26,7 @@ class RunConfig:
     train_seed: int = 0
     eval_seed: int = 1
     batch_size: int = 32
-    lr: float = 1e-4
+    lr: float = 5e-4
     weight_decay: float = 0.01
     warmup_steps: int = 4_000
     grad_clip_norm: float = 1.0

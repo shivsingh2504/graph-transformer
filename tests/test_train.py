@@ -502,7 +502,7 @@ class TestDefaultValues:
         p = sig.parameters
         assert p["dropout"].default == 0.0
         assert p["warmup_steps"].default == 4000
-        assert p["lr"].default == pytest.approx(1e-4)
+        assert p["lr"].default == pytest.approx(5e-4)
         assert p["weight_decay"].default == pytest.approx(0.01)
         assert p["batch_size"].default == 32
         assert p["n_layers"].default == 3
