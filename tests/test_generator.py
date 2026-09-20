@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import pytest 
-from src.data.graph_generator import Graph,generate_random_connected_graph
+from data.graph_generator import Graph,generate_random_connected_graph
 
 def _is_connected(graph: Graph)->bool:
   if graph.num_nodes == 0 :

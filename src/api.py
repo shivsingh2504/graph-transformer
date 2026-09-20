@@ -12,7 +12,7 @@ from data.graph_generator import Graph, generate_random_connected_graph
 from data.dijkstra import run_dijkstra, ShortestPath
 from data.tokenizer import GraphTokenizer
 from model.model import Transformer
-from eval.evaluate import _greedy_decode, _MAX_DECODE_LEN
+from eval.evaluate import _greedy_decode, _MAX_DECODE_LEN, _decode_token_sequence, _check_path
 
 app = FastAPI()
 
@@ -29,14 +29,19 @@ _MODEL: Transformer = None
 _TOKENIZER: GraphTokenizer = None
 _DEVICE: torch.device = None
 
+TEST_RUN2_MODE = True
+
 @app.on_event("startup")
 def load_model():
     global _MODEL, _TOKENIZER, _DEVICE
     _DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Loading model on {_DEVICE}")
     
-    # Let's load the latest from run2 since run3 is still training
-    ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run2", "final.pt")
+    if TEST_RUN2_MODE:
+        ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run2", "final.pt")
+    else:
+        ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run3", "final.pt")
+        
     if not os.path.exists(ckpt_path):
         print(f"Warning: Model not found at {ckpt_path}. Endpoint prediction will fail.")
         return
@@ -73,22 +78,45 @@ def generate_graph(num_nodes: int = 10, seed: int = None):
         import random
         seed = random.randint(0, 1000000)
     
-    dynamic_edges = min(3 * num_nodes, num_nodes * (num_nodes - 1) // 2)
-    graph = generate_random_connected_graph(
-        num_nodes=num_nodes,
-        seed=seed,
-        num_edges=dynamic_edges,
-        min_weight=1,
-        max_weight=10
-    )
-    return GenerateResponse(
-        num_nodes=graph.num_nodes,
-        node_ids=graph.node_ids,
-        edges=[[u, v, w] for u, v, w in graph.edges],
-        source=graph.source,
-        target=graph.target,
-        seed=graph.seed
-    )
+    if TEST_RUN2_MODE:
+        import random as rand
+        rng = rand.Random(seed)
+        node_ids = list(range(num_nodes))
+        edges = []
+        connected = [0]
+        # Build a spanning tree
+        for i in range(1, num_nodes):
+            u = rng.choice(connected)
+            v = i
+            w = rng.randint(1, 10)
+            edges.append([min(u, v), max(u, v), w])
+            connected.append(i)
+        source, target = rng.sample(node_ids, 2)
+        return GenerateResponse(
+            num_nodes=num_nodes,
+            node_ids=node_ids,
+            edges=edges,
+            source=source,
+            target=target,
+            seed=seed
+        )
+    else:
+        dynamic_edges = min(3 * num_nodes, num_nodes * (num_nodes - 1) // 2)
+        graph = generate_random_connected_graph(
+            num_nodes=num_nodes,
+            seed=seed,
+            num_edges=dynamic_edges,
+            min_weight=1,
+            max_weight=10
+        )
+        return GenerateResponse(
+            num_nodes=graph.num_nodes,
+            node_ids=graph.node_ids,
+            edges=[[u, v, w] for u, v, w in graph.edges],
+            source=graph.source,
+            target=graph.target,
+            seed=graph.seed
+        )
 
 class PredictRequest(BaseModel):
     num_nodes: int
@@ -103,6 +131,8 @@ class PredictResponse(BaseModel):
     dijkstra_cost: float
     model_path: List[int]
     model_raw_tokens: List[str]
+    valid_path: bool
+    is_optimal: bool
 
 @app.post("/api/predict", response_model=PredictResponse)
 def predict_path(req: PredictRequest):
@@ -125,24 +155,30 @@ def predict_path(req: PredictRequest):
     src_ids = torch.tensor([_TOKENIZER.encode_graph(graph)], dtype=torch.long)
     raw_tokens = _greedy_decode(_MODEL, src_ids, _TOKENIZER, _DEVICE, _MAX_DECODE_LEN)
     
-    nodes: List[int] = []
+    # Fetch raw token strings for the UI
     raw_token_strs: List[str] = []
-    
-    for tid in raw_tokens[1:]:
-        if tid == _TOKENIZER.eos_token_id:
-            raw_token_strs.append("<EOS>")
-            break
-        tok = _TOKENIZER.id_to_token.get(tid, "")
+    for tid in raw_tokens:
+        tok = _TOKENIZER.id_to_token.get(tid, f"<UNK:{tid}>")
         raw_token_strs.append(tok)
-        if tok.startswith("node_"):
-            try:
-                nodes.append(int(tok[len("node_"):]))
-            except ValueError:
-                pass
+        if tok == "<EOS>":
+            break
+            
+    # Use proper harness evaluation functions
+    nodes = _decode_token_sequence(raw_tokens, _TOKENIZER)
+    if nodes is None:
+        nodes = []
+        
+    valid_path, correct_endpoints, edges_valid, optimal_cost, decoded_cost = _check_path(
+        nodes, graph, sp.cost
+    )
+    
+    is_optimal = valid_path and correct_endpoints and optimal_cost
                 
     return PredictResponse(
         dijkstra_path=sp.path,
         dijkstra_cost=sp.cost,
         model_path=nodes,
-        model_raw_tokens=raw_token_strs
+        model_raw_tokens=raw_token_strs,
+        valid_path=valid_path and correct_endpoints,
+        is_optimal=is_optimal
     )
