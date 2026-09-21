@@ -253,9 +253,17 @@ sampling noise. Where they overlap the two scripts agree; the m9b (n=400) value
 is quoted above as the better-powered one.
 
 Every trained length in [139, 184] scores 60–72%. Off-grid lengths collapse to
-~0%, and the collapse is specifically in `correct_endpoints` (0–4.5%) while
-`edges_valid` stays high (62–99%). A three-token change — one extra edge — is the
-difference between 71.8% and 0%.
+~0%, and the collapse is specifically in `correct_endpoints` — 0–4.5% on every
+off-grid row bar one — while `edges_valid` stays high (62.0–99.5%). A
+three-token change, one extra edge, is the difference between 71.8% and 0%.
+
+The E=40 cell is measured twice in `comb_and_size_run5.txt` ("Control Sparse" and
+"Control Sparse Repeat", 200 graphs each). Both give 0.0% V&O and 0.0% endpoints;
+`edges_valid` differs (71.5% vs 66.5%). The table quotes n=200 for one block.
+
+The single exception to the endpoint collapse is E=63 (len 193), at 35.5% V&O and
+55.0% endpoints — the one off-grid row that partially works. Limitation 4 records
+further counter-examples at N=7.
 
 **What the E=45…60 rows do and do not show.** They are a *control*, not a
 discriminating test. All six edge counts are multiples of 3 and all six lengths
@@ -348,9 +356,11 @@ length sensitivity entirely. **This is untested.**
    29.8–35.2%, so the score sits on a knife-edge of which topologies appear.
    **Practical consequence: treat the N=50 figure as 23.6% with a block-to-block
    spread of roughly 15–29%, and do not quote a single block.** The other size
-   rows agree within 3 points across the two scripts that measured them (N=25:
-   63.5 vs 63.0; N=30: 47.5 vs 47.8; N=35: 38.0 vs 39.8; N=40: 29.0 vs 31.8;
-   N=45: 22.5 vs 26.2), so N=50 is the outlier. Note the size sweep in the
+   rows are consistent between the two scripts that measured them (`comb` at
+   n=200, `m9b` at n=400): N=25 63.5 vs 63.0, N=30 47.5 vs 47.8, N=35 38.0 vs
+   39.8, N=40 29.0 vs 31.8, N=45 22.5 vs 26.2. The largest of those gaps is 3.7
+   points at N=45, which is 1.0σ on the combined standard error — noise. N=50 is
+   14.2 points, 4.2σ, and is the outlier. Note the size sweep in the
    [length-vs-size section](#what-actually-drives-the-collapse-length-not-size)
    still reports the m9b row (29.2%) for consistency with that file; 23.0% is the
    better-powered number.
