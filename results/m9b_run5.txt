@@ -1,0 +1,203 @@
+Device: cpu
+
+=======================================================
+ M9b DIAGNOSTIC
+=======================================================
+
+--- Size Generalization (Fixed length 184) ---
+
+Size Gen: N=25, E=60 (len=184) - 400 graphs
+  Token length: 184, Density: 0.200
+  Metrics:
+    valid_and_optimal :  252 ( 63.0%)
+    correct_endpoints :  383 ( 95.8%)
+    edges_valid       :  323 ( 80.8%)
+    valid_path        :  298 ( 74.5%)
+    optimal_cost      :  252 ( 63.0%)
+  Mean Dijkstra hops  : 2.66
+
+Size Gen: N=30, E=60 (len=184) - 400 graphs
+  Token length: 184, Density: 0.138
+  Metrics:
+    valid_and_optimal :  191 ( 47.8%)
+    correct_endpoints :  359 ( 89.8%)
+    edges_valid       :  254 ( 63.5%)
+    valid_path        :  231 ( 57.8%)
+    optimal_cost      :  191 ( 47.8%)
+  Mean Dijkstra hops  : 3.03
+
+Size Gen: N=35, E=60 (len=184) - 400 graphs
+  Token length: 184, Density: 0.101
+  Metrics:
+    valid_and_optimal :  159 ( 39.8%)
+    correct_endpoints :  343 ( 85.8%)
+    edges_valid       :  206 ( 51.5%)
+    valid_path        :  178 ( 44.5%)
+    optimal_cost      :  159 ( 39.8%)
+  Mean Dijkstra hops  : 3.25
+
+Size Gen: N=40, E=60 (len=184) - 400 graphs
+  Token length: 184, Density: 0.077
+  Metrics:
+    valid_and_optimal :  127 ( 31.8%)
+    correct_endpoints :  334 ( 83.5%)
+    edges_valid       :  165 ( 41.2%)
+    valid_path        :  139 ( 34.8%)
+    optimal_cost      :  127 ( 31.8%)
+  Mean Dijkstra hops  : 3.71
+
+Size Gen: N=45, E=60 (len=184) - 400 graphs
+  Token length: 184, Density: 0.061
+  Metrics:
+    valid_and_optimal :  105 ( 26.2%)
+    correct_endpoints :  336 ( 84.0%)
+    edges_valid       :  136 ( 34.0%)
+    valid_path        :  111 ( 27.8%)
+    optimal_cost      :  105 ( 26.2%)
+  Mean Dijkstra hops  : 4.11
+
+Size Gen: N=50, E=60 (len=184) - 400 graphs
+  Token length: 184, Density: 0.049
+  Metrics:
+    valid_and_optimal :  117 ( 29.2%)
+    correct_endpoints :  318 ( 79.5%)
+    edges_valid       :  141 ( 35.2%)
+    valid_path        :  125 ( 31.2%)
+    optimal_cost      :  117 ( 29.2%)
+  Mean Dijkstra hops  : 4.34
+
+--- Discriminating test 1 (Unseen multiples vs non-multiples of 3 at N=7) ---
+
+Unseen Multiple: N=7, E=12 (len=40) - 400 graphs
+  Token length: 40, Density: 0.571
+  Metrics:
+    valid_and_optimal :  241 ( 60.2%)
+    correct_endpoints :  306 ( 76.5%)
+    edges_valid       :  359 ( 89.8%)
+    valid_path        :  283 ( 70.8%)
+    optimal_cost      :  245 ( 61.2%)
+  Mean Dijkstra hops  : 1.61
+
+Contrast: N=7, E=13 (len=43) - 400 graphs
+  Token length: 43, Density: 0.619
+  Metrics:
+    valid_and_optimal :  313 ( 78.2%)
+    correct_endpoints :  348 ( 87.0%)
+    edges_valid       :  355 ( 88.8%)
+    valid_path        :  321 ( 80.2%)
+    optimal_cost      :  314 ( 78.5%)
+  Mean Dijkstra hops  : 1.61
+
+Unseen Multiple: N=7, E=18 (len=58) - 400 graphs
+  Token length: 58, Density: 0.857
+  Metrics:
+    valid_and_optimal :  372 ( 93.0%)
+    correct_endpoints :  397 ( 99.2%)
+    edges_valid       :  397 ( 99.2%)
+    valid_path        :  394 ( 98.5%)
+    optimal_cost      :  372 ( 93.0%)
+  Mean Dijkstra hops  : 1.52
+
+Contrast: N=7, E=19 (len=61) - 400 graphs
+  Token length: 61, Density: 0.905
+  Metrics:
+    valid_and_optimal :    0 (  0.0%)
+    correct_endpoints :    0 (  0.0%)
+    edges_valid       :  119 ( 29.8%)
+    valid_path        :   92 ( 23.0%)
+    optimal_cost      :   50 ( 12.5%)
+  Mean Dijkstra hops  : 1.46
+
+--- Discriminating test 2 (Unseen multiples E>60 at N=20 - repeats earlier N=22-24 collapse) ---
+
+Unseen Multiple: N=20, E=66 (len=202) - 400 graphs
+  Token length: 202, Density: 0.347
+  Metrics:
+    valid_and_optimal :    5 (  1.2%)
+    correct_endpoints :   12 (  3.0%)
+    edges_valid       :  365 ( 91.2%)
+    valid_path        :  241 ( 60.2%)
+    optimal_cost      :   32 (  8.0%)
+  Mean Dijkstra hops  : 2.28
+
+Unseen Multiple: N=20, E=69 (len=211) - 400 graphs
+  Token length: 211, Density: 0.363
+  Metrics:
+    valid_and_optimal :    0 (  0.0%)
+    correct_endpoints :    1 (  0.2%)
+    edges_valid       :  367 ( 91.8%)
+    valid_path        :  234 ( 58.5%)
+    optimal_cost      :   31 (  7.8%)
+  Mean Dijkstra hops  : 2.28
+
+Unseen Multiple: N=20, E=72 (len=220) - 400 graphs
+  Token length: 220, Density: 0.379
+  Metrics:
+    valid_and_optimal :    1 (  0.2%)
+    correct_endpoints :    1 (  0.2%)
+    edges_valid       :  371 ( 92.8%)
+    valid_path        :  222 ( 55.5%)
+    optimal_cost      :   30 (  7.5%)
+  Mean Dijkstra hops  : 2.21
+
+--- Discriminating test 3 (Sparse N=20 rows at trained lengths) ---
+
+Trained Length: N=20, E=45 (len=139) - 400 graphs
+  Token length: 139, Density: 0.237
+  Metrics:
+    valid_and_optimal :  260 ( 65.0%)
+    correct_endpoints :  377 ( 94.2%)
+    edges_valid       :  331 ( 82.8%)
+    valid_path        :  313 ( 78.2%)
+    optimal_cost      :  260 ( 65.0%)
+  Mean Dijkstra hops  : 2.55
+
+Trained Length: N=20, E=48 (len=148) - 400 graphs
+  Token length: 148, Density: 0.253
+  Metrics:
+    valid_and_optimal :  240 ( 60.0%)
+    correct_endpoints :  383 ( 95.8%)
+    edges_valid       :  330 ( 82.5%)
+    valid_path        :  308 ( 77.0%)
+    optimal_cost      :  240 ( 60.0%)
+  Mean Dijkstra hops  : 2.40
+
+Trained Length: N=20, E=51 (len=157) - 400 graphs
+  Token length: 157, Density: 0.268
+  Metrics:
+    valid_and_optimal :  281 ( 70.2%)
+    correct_endpoints :  385 ( 96.2%)
+    edges_valid       :  353 ( 88.2%)
+    valid_path        :  333 ( 83.2%)
+    optimal_cost      :  281 ( 70.2%)
+  Mean Dijkstra hops  : 2.35
+
+Trained Length: N=20, E=54 (len=166) - 400 graphs
+  Token length: 166, Density: 0.284
+  Metrics:
+    valid_and_optimal :  276 ( 69.0%)
+    correct_endpoints :  382 ( 95.5%)
+    edges_valid       :  353 ( 88.2%)
+    valid_path        :  338 ( 84.5%)
+    optimal_cost      :  276 ( 69.0%)
+  Mean Dijkstra hops  : 2.40
+
+Trained Length: N=20, E=57 (len=175) - 400 graphs
+  Token length: 175, Density: 0.300
+  Metrics:
+    valid_and_optimal :  274 ( 68.5%)
+    correct_endpoints :  383 ( 95.8%)
+    edges_valid       :  356 ( 89.0%)
+    valid_path        :  338 ( 84.5%)
+    optimal_cost      :  274 ( 68.5%)
+  Mean Dijkstra hops  : 2.44
+
+Trained Length: N=20, E=60 (len=184) - 400 graphs
+  Token length: 184, Density: 0.316
+  Metrics:
+    valid_and_optimal :  287 ( 71.8%)
+    correct_endpoints :  394 ( 98.5%)
+    edges_valid       :  372 ( 93.0%)
+    valid_path        :  362 ( 90.5%)
+    optimal_cost      :  287 ( 71.8%)
+  Mean Dijkstra hops  : 2.37
