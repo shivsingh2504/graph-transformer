@@ -1,0 +1,80 @@
+Device: cpu
+Loading checkpoint from C:\Users\reals.DESKTOP-B4CI38M\Desktop\graph\diagnostics\..\checkpoints_run5\final.pt ...
+Model loaded.
+
+Generating 1000 eval graphs (seed=1, nodes=(5, 20)) ...
+Eval split ready.
+
+  100/1000  (6.7s elapsed) ...
+  200/1000  (14.4s elapsed) ...
+  300/1000  (22.6s elapsed) ...
+  400/1000  (30.4s elapsed) ...
+  500/1000  (37.2s elapsed) ...
+  600/1000  (42.4s elapsed) ...
+  700/1000  (47.6s elapsed) ...
+  800/1000  (54.6s elapsed) ...
+  900/1000  (61.0s elapsed) ...
+  1000/1000  (69.6s elapsed) ...
+
+Evaluation complete in 69.7s.
+
+==============================================================
+RUN 5 -- BREAKDOWN ANALYSIS (v2)
+==============================================================
+
+--- Sanity check vs results.json ---
+  valid_and_optimal :   836 / 1000  (results.json: 836)   OK
+  edges_valid=False :    30 / 1000  (results.json: 30)    OK
+  valid_path=True   :   952 / 1000  (results.json: 952)   OK
+
+--- 1. valid_and_optimal by node-count bucket ---
+  Bucket        N    V&O        %
+  --------------------------------
+   5- 9       304    289    95.1%
+  10-14       297    245    82.5%
+  15-20       399    302    75.7%
+  --------------------------------
+  ALL        1000    836    83.6%
+
+--- 2. Failure taxonomy (164 failures) ---
+  Endpoint checked before edge validity; a graph with both wrong
+  endpoints and invalid edges appears only in 'wrong endpoint'.
+  Cycles (has_cycle) are structural failures, not cost mistakes.
+  Wrong endpoint:          14  (8.5% of failures, 1.4% of total)
+  Invalid edge:            21  (12.8% of failures, 2.1% of total)
+  Has cycle:               16  (9.8% of failures, 1.6% of total)
+  Valid but suboptimal:   113  (68.9% of failures, 11.3% of total)
+  --- structural total:    51  (31.1% of failures)
+  --- cost-error total:   113  (68.9% of failures)
+  Cross-check: valid_path=True but not optimal = 116  (= 113 suboptimal + 3 wrong-endpoint-but-valid)
+
+--- 3. Weight sensitivity ---
+  'Insensitive' means the cheapest path is also a minimum-hop path.
+  A non-optimal answer on an insensitive graph is still an error;
+  it just happens on a graph where a longer valid route costs more.
+
+  Def A -- data_check.py (locked primary, see lock.md):
+    Sensitive = hop_count(Dijkstra path) != BFS min hops
+    Sensitive:          368 / 1000  (36.8%)  [train split: 36.7%]
+    Acc, sensitive:      262 / 368  = 71.2%
+    Acc, insensitive:    574 / 632  = 90.8%
+    Gap: 19.6 pp
+
+  Def B -- BFS-cost (v1; comparison only, not locked):
+    Sensitive = cost(BFS-min-hop path) > Dijkstra cost
+    Sensitive:          505 / 1000  (50.5%)
+    Acc, sensitive:      381 / 505  = 75.4%
+    Acc, insensitive:    455 / 495  = 91.9%
+    Gap: 16.5 pp
+
+==============================================================
+Raw counts:
+  bucket_total = {(5, 9): 304, (10, 14): 297, (15, 20): 399}
+  bucket_vo    = {(5, 9): 289, (10, 14): 245, (15, 20): 302}
+  fail_wrong_endpoint   = 14
+  fail_invalid_edge     = 21
+  fail_has_cycle        = 16
+  fail_valid_suboptimal = 113
+  [Def A] ws=368 ws_vo=262  nws=632 nws_vo=574
+  [Def B] ws=505 ws_vo=381  nws=495 nws_vo=455
+==============================================================

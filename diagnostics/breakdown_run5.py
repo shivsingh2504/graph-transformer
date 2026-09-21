@@ -23,7 +23,7 @@ from collections import deque
 from heapq import heappush, heappop
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_SRC = os.path.join(_HERE, "src")
+_SRC = os.path.join(_HERE, "..", "src")
 sys.path.insert(0, _SRC)
 
 import torch
@@ -39,7 +39,7 @@ from model.model import Transformer
 EVAL_SEED = 1
 NUM_EVAL = 1_000
 NODE_RANGE = (5, 20)
-CKPT_PATH = os.path.join(_HERE, "checkpoints_run5", "final.pt")
+CKPT_PATH = os.path.join(_HERE, "..", "checkpoints_run5", "final.pt")
 
 
 def _bfs_min_hops(graph, source, target) -> int:

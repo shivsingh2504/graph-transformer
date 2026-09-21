@@ -1,0 +1,16 @@
+Device: cpu
+
+N=50, E=60 (len=184) - 1000 graphs
+  Seed range: 30000000 .. 30000999
+  Token length: 184, Density: 0.049
+  Metrics:
+    valid_and_optimal :  230 ( 23.0%)
+    correct_endpoints :  814 ( 81.4%)
+    edges_valid       :  298 ( 29.8%)
+    valid_path        :  249 ( 24.9%)
+    optimal_cost      :  230 ( 23.0%)
+  Mean Dijkstra hops  : 4.42
+
+  Half-split (within-block stability):
+    first  500:  118 ( 23.6%)
+    second 500:  112 ( 22.4%)
