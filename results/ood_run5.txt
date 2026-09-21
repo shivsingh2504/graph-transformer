@@ -1,0 +1,144 @@
+======================================================================
+M9 OOD EVALUATION -- checkpoints_run5\final.pt
+======================================================================
+WAIVER NOTE:
+Run 5 ID Eval Score: 83.6% (836/1000) valid_and_optimal.
+Gate (>=90%) waived by project owner so OOD evaluation can proceed.
+ID accuracy by size: 5-9: 95.1%, 10-14: 82.5%, 15-20: 75.7%.
+======================================================================
+
+Device: cpu
+--- CONTROL STEP ---
+Control ID eval valid_and_optimal: 836/1000 (in 20.2s)
+Control step passed.
+
+--- OOD EVALUATION ---
+  100/3000 (4.0s elapsed) ...
+  200/3000 (7.8s elapsed) ...
+  300/3000 (12.0s elapsed) ...
+  400/3000 (15.4s elapsed) ...
+  500/3000 (19.7s elapsed) ...
+  600/3000 (23.1s elapsed) ...
+  700/3000 (27.5s elapsed) ...
+  800/3000 (31.2s elapsed) ...
+  900/3000 (35.1s elapsed) ...
+  1000/3000 (39.1s elapsed) ...
+  1100/3000 (42.9s elapsed) ...
+  1200/3000 (47.1s elapsed) ...
+  1300/3000 (50.9s elapsed) ...
+  1400/3000 (55.4s elapsed) ...
+  1500/3000 (59.4s elapsed) ...
+  1600/3000 (63.6s elapsed) ...
+  1700/3000 (67.7s elapsed) ...
+  1800/3000 (71.9s elapsed) ...
+  1900/3000 (76.3s elapsed) ...
+  2000/3000 (80.5s elapsed) ...
+  2100/3000 (84.9s elapsed) ...
+  2200/3000 (89.1s elapsed) ...
+  2300/3000 (93.3s elapsed) ...
+  2400/3000 (97.5s elapsed) ...
+  2500/3000 (101.6s elapsed) ...
+  2600/3000 (106.0s elapsed) ...
+  2700/3000 (109.8s elapsed) ...
+  2800/3000 (114.6s elapsed) ...
+  2900/3000 (118.9s elapsed) ...
+  3000/3000 (122.9s elapsed) ...
+
+OOD Evaluation complete in 123.1s.
+
+[OVERALL 25-50] N=3000
+  Metrics:
+    valid_and_optimal :    0 (  0.0%)
+    edges_valid       : 1721 ( 57.4%)
+    valid_path        :  684 ( 22.8%)
+    correct_endpoints :    5 (  0.2%)
+    optimal_cost      :   97 (  3.2%)
+  Taxonomy:
+    Wrong endpoint    : 2995 ( 99.8% of fails)
+    Invalid edge      :    4 (  0.1% of fails)
+    Has cycle         :    1 (  0.0% of fails)
+    Suboptimal        :    0 (  0.0% of fails)
+  Weight-sensitive:
+    Share             : 1283 ( 42.8%)
+    Acc (sensitive)   :    0 / 1283 (  0.0%)
+-------------------------------------------------------
+[BIN 25-29] N=613
+  Metrics:
+    valid_and_optimal :    0 (  0.0%)
+    edges_valid       :  487 ( 79.4%)
+    valid_path        :  227 ( 37.0%)
+    correct_endpoints :    0 (  0.0%)
+    optimal_cost      :   36 (  5.9%)
+  Taxonomy:
+    Wrong endpoint    :  613 (100.0% of fails)
+    Invalid edge      :    0 (  0.0% of fails)
+    Has cycle         :    0 (  0.0% of fails)
+    Suboptimal        :    0 (  0.0% of fails)
+  Weight-sensitive:
+    Share             :  237 ( 38.7%)
+    Acc (sensitive)   :    0 / 237 (  0.0%)
+-------------------------------------------------------
+[BIN 30-34] N=586
+  Metrics:
+    valid_and_optimal :    0 (  0.0%)
+    edges_valid       :  360 ( 61.4%)
+    valid_path        :  145 ( 24.7%)
+    correct_endpoints :    0 (  0.0%)
+    optimal_cost      :   14 (  2.4%)
+  Taxonomy:
+    Wrong endpoint    :  586 (100.0% of fails)
+    Invalid edge      :    0 (  0.0% of fails)
+    Has cycle         :    0 (  0.0% of fails)
+    Suboptimal        :    0 (  0.0% of fails)
+  Weight-sensitive:
+    Share             :  237 ( 40.4%)
+    Acc (sensitive)   :    0 / 237 (  0.0%)
+-------------------------------------------------------
+[BIN 35-39] N=572
+  Metrics:
+    valid_and_optimal :    0 (  0.0%)
+    edges_valid       :  313 ( 54.7%)
+    valid_path        :  117 ( 20.5%)
+    correct_endpoints :    2 (  0.3%)
+    optimal_cost      :   16 (  2.8%)
+  Taxonomy:
+    Wrong endpoint    :  570 ( 99.7% of fails)
+    Invalid edge      :    2 (  0.3% of fails)
+    Has cycle         :    0 (  0.0% of fails)
+    Suboptimal        :    0 (  0.0% of fails)
+  Weight-sensitive:
+    Share             :  247 ( 43.2%)
+    Acc (sensitive)   :    0 / 247 (  0.0%)
+-------------------------------------------------------
+[BIN 40-44] N=579
+  Metrics:
+    valid_and_optimal :    0 (  0.0%)
+    edges_valid       :  261 ( 45.1%)
+    valid_path        :   81 ( 14.0%)
+    correct_endpoints :    3 (  0.5%)
+    optimal_cost      :   15 (  2.6%)
+  Taxonomy:
+    Wrong endpoint    :  576 ( 99.5% of fails)
+    Invalid edge      :    2 (  0.3% of fails)
+    Has cycle         :    1 (  0.2% of fails)
+    Suboptimal        :    0 (  0.0% of fails)
+  Weight-sensitive:
+    Share             :  256 ( 44.2%)
+    Acc (sensitive)   :    0 / 256 (  0.0%)
+-------------------------------------------------------
+[BIN 45-50] N=650
+  Metrics:
+    valid_and_optimal :    0 (  0.0%)
+    edges_valid       :  300 ( 46.2%)
+    valid_path        :  114 ( 17.5%)
+    correct_endpoints :    0 (  0.0%)
+    optimal_cost      :   16 (  2.5%)
+  Taxonomy:
+    Wrong endpoint    :  650 (100.0% of fails)
+    Invalid edge      :    0 (  0.0% of fails)
+    Has cycle         :    0 (  0.0% of fails)
+    Suboptimal        :    0 (  0.0% of fails)
+  Weight-sensitive:
+    Share             :  306 ( 47.1%)
+    Acc (sensitive)   :    0 / 306 (  0.0%)
+-------------------------------------------------------

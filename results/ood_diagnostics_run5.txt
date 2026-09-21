@@ -1,0 +1,174 @@
+Device: cpu
+Generating ID set...
+
+=======================================================
+ ID (5-20) DIAGNOSTICS
+=======================================================
+  100/1000 (3.8s) ...
+  200/1000 (7.6s) ...
+  300/1000 (12.0s) ...
+  400/1000 (15.8s) ...
+  500/1000 (20.7s) ...
+  600/1000 (24.4s) ...
+  700/1000 (28.1s) ...
+  800/1000 (32.8s) ...
+  900/1000 (36.4s) ...
+  1000/1000 (39.9s) ...
+
+[BIN 5-9] N=304
+  (a) path[0] == source: 303 (99.7%)
+  (b) Ended with EOS: 303 (99.7%), Hit max_decode_len: 1 (0.3%)
+  (c) Gen Length - Mean: 2.5, Median: 2.0
+      Djk Length - Mean: 2.5, Median: 2.0
+  (d) edges_valid: 302 (99.3%)
+      simple_path: 304 (100.0%)
+      ends_at_tgt: 302 (99.3%)
+      Meets all 3: 301 (99.0%)
+  (e) Last node adj to tgt: 1 (0.3%)
+
+[BIN 10-14] N=297
+  (a) path[0] == source: 293 (98.7%)
+  (b) Ended with EOS: 293 (98.7%), Hit max_decode_len: 4 (1.3%)
+  (c) Gen Length - Mean: 3.0, Median: 3.0
+      Djk Length - Mean: 2.9, Median: 3.0
+  (d) edges_valid: 286 (96.3%)
+      simple_path: 290 (97.6%)
+      ends_at_tgt: 291 (98.0%)
+      Meets all 3: 280 (94.3%)
+  (e) Last node adj to tgt: 0 (0.0%)
+
+[BIN 15-20] N=399
+  (a) path[0] == source: 395 (99.0%)
+  (b) Ended with EOS: 395 (99.0%), Hit max_decode_len: 4 (1.0%)
+  (c) Gen Length - Mean: 3.9, Median: 3.0
+      Djk Length - Mean: 3.2, Median: 3.0
+  (d) edges_valid: 382 (95.7%)
+      simple_path: 378 (94.7%)
+      ends_at_tgt: 393 (98.5%)
+      Meets all 3: 368 (92.2%)
+  (e) Last node adj to tgt: 0 (0.0%)
+
+Generating OOD set...
+
+=======================================================
+ OOD (25-50) DIAGNOSTICS
+=======================================================
+Example 1: N=42, Src=46, Tgt=39
+  Raw Tokens: [BOS] node_42 node_38 node_2 node_22 node_2 node_49 node_2 node_26 [EOS]
+  Model Path: [42, 38, 2, 22, 2, 49, 2, 26]
+  Dijkstra Path: [46, 35, 39]
+Example 2: N=49, Src=2, Tgt=24
+  Raw Tokens: [BOS] node_25 node_8 node_2 node_0 node_38 node_0 node_46 node_0 [EOS]
+  Model Path: [25, 8, 2, 0, 38, 0, 46, 0]
+  Dijkstra Path: [2, 8, 24]
+Example 3: N=28, Src=34, Tgt=40
+  Raw Tokens: [BOS] node_49 node_1 node_28 node_1 node_28 node_1 [EOS]
+  Model Path: [49, 1, 28, 1, 28, 1]
+  Dijkstra Path: [34, 16, 44, 29, 40]
+Example 4: N=46, Src=28, Tgt=32
+  Raw Tokens: [BOS] node_31 node_10 node_8 node_18 node_0 [EOS]
+  Model Path: [31, 10, 8, 18, 0]
+  Dijkstra Path: [28, 4, 20, 31, 32]
+Example 5: N=40, Src=33, Tgt=46
+  Raw Tokens: [BOS] node_24 node_34 node_10 node_30 node_0 node_30 [EOS]
+  Model Path: [24, 34, 10, 30, 0, 30]
+  Dijkstra Path: [33, 49, 16, 29, 46]
+  100/3000 (7.9s) ...
+  200/3000 (15.4s) ...
+  300/3000 (22.9s) ...
+  400/3000 (29.7s) ...
+  500/3000 (38.5s) ...
+  600/3000 (45.7s) ...
+  700/3000 (55.1s) ...
+  800/3000 (65.2s) ...
+  900/3000 (74.2s) ...
+  1000/3000 (82.1s) ...
+  1100/3000 (90.1s) ...
+  1200/3000 (99.2s) ...
+  1300/3000 (107.2s) ...
+  1400/3000 (117.2s) ...
+  1500/3000 (125.7s) ...
+  1600/3000 (134.6s) ...
+  1700/3000 (143.1s) ...
+  1800/3000 (150.8s) ...
+  1900/3000 (159.1s) ...
+  2000/3000 (167.9s) ...
+  2100/3000 (177.2s) ...
+  2200/3000 (185.9s) ...
+  2300/3000 (194.3s) ...
+  2400/3000 (203.1s) ...
+  2500/3000 (212.3s) ...
+  2600/3000 (221.8s) ...
+  2700/3000 (232.0s) ...
+  2800/3000 (245.5s) ...
+  2900/3000 (259.0s) ...
+  3000/3000 (269.3s) ...
+
+[BIN 25-29] N=613
+  (a) path[0] == source: 30 (4.9%)
+  (b) Ended with EOS: 609 (99.3%), Hit max_decode_len: 4 (0.7%)
+  (c) Gen Length - Mean: 5.8, Median: 5.0
+      Djk Length - Mean: 3.5, Median: 3.0
+  (d) edges_valid: 487 (79.4%)
+      simple_path: 292 (47.6%)
+      ends_at_tgt: 26 (4.2%)
+      Meets all 3: 8 (1.3%)
+  (e) Last node adj to tgt: 183 (29.9%)
+
+[BIN 30-34] N=586
+  (a) path[0] == source: 21 (3.6%)
+  (b) Ended with EOS: 576 (98.3%), Hit max_decode_len: 10 (1.7%)
+  (c) Gen Length - Mean: 7.2, Median: 5.0
+      Djk Length - Mean: 3.6, Median: 3.0
+  (d) edges_valid: 360 (61.4%)
+      simple_path: 251 (42.8%)
+      ends_at_tgt: 21 (3.6%)
+      Meets all 3: 6 (1.0%)
+  (e) Last node adj to tgt: 130 (22.2%)
+
+[BIN 35-39] N=572
+  (a) path[0] == source: 74 (12.9%)
+  (b) Ended with EOS: 565 (98.8%), Hit max_decode_len: 7 (1.2%)
+  (c) Gen Length - Mean: 7.0, Median: 5.0
+      Djk Length - Mean: 3.8, Median: 4.0
+  (d) edges_valid: 313 (54.7%)
+      simple_path: 232 (40.6%)
+      ends_at_tgt: 11 (1.9%)
+      Meets all 3: 2 (0.3%)
+  (e) Last node adj to tgt: 116 (20.3%)
+
+[BIN 40-44] N=579
+  (a) path[0] == source: 47 (8.1%)
+  (b) Ended with EOS: 573 (99.0%), Hit max_decode_len: 6 (1.0%)
+  (c) Gen Length - Mean: 7.9, Median: 6.0
+      Djk Length - Mean: 3.9, Median: 4.0
+  (d) edges_valid: 261 (45.1%)
+      simple_path: 222 (38.3%)
+      ends_at_tgt: 12 (2.1%)
+      Meets all 3: 1 (0.2%)
+  (e) Last node adj to tgt: 82 (14.2%)
+
+[BIN 45-50] N=650
+  (a) path[0] == source: 90 (13.8%)
+  (b) Ended with EOS: 646 (99.4%), Hit max_decode_len: 4 (0.6%)
+  (c) Gen Length - Mean: 6.6, Median: 5.0
+      Djk Length - Mean: 4.0, Median: 4.0
+  (d) edges_valid: 300 (46.2%)
+      simple_path: 281 (43.2%)
+      ends_at_tgt: 14 (2.2%)
+      Meets all 3: 3 (0.5%)
+  (e) Last node adj to tgt: 90 (13.8%)
+
+=======================================================
+ SIZE SWEEP DIAGNOSTIC (N = 18 to 30)
+=======================================================
+N=18 (200 graphs) | V&O: 149 ( 74.5%) | correct_ends: 196 ( 98.0%) | edges_valid: 188 ( 94.0%)
+N=20 (200 graphs) | V&O: 154 ( 77.0%) | correct_ends: 195 ( 97.5%) | edges_valid: 190 ( 95.0%)
+N=21 (200 graphs) | V&O:  83 ( 41.5%) | correct_ends: 106 ( 53.0%) | edges_valid: 181 ( 90.5%)
+N=22 (200 graphs) | V&O:   6 (  3.0%) | correct_ends:   8 (  4.0%) | edges_valid: 185 ( 92.5%)
+N=23 (200 graphs) | V&O:   0 (  0.0%) | correct_ends:   3 (  1.5%) | edges_valid: 178 ( 89.0%)
+N=24 (200 graphs) | V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 180 ( 90.0%)
+N=25 (200 graphs) | V&O:   1 (  0.5%) | correct_ends:   1 (  0.5%) | edges_valid: 174 ( 87.0%)
+N=26 (200 graphs) | V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 170 ( 85.0%)
+N=28 (200 graphs) | V&O:   0 (  0.0%) | correct_ends:   1 (  0.5%) | edges_valid: 145 ( 72.5%)
+N=30 (200 graphs) | V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 149 ( 74.5%)
