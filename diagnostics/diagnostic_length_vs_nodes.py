@@ -2,7 +2,7 @@ import os
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_HERE, "src"))
+sys.path.insert(0, os.path.join(_HERE, "..", "src"))
 
 import torch
 from data.graph_generator import generate_random_connected_graph
@@ -11,7 +11,7 @@ from data.tokenizer import GraphTokenizer
 from eval.evaluate import evaluate_example
 from model.model import Transformer
 
-CKPT_PATH = os.path.join(_HERE, "checkpoints_run5", "final.pt")
+CKPT_PATH = os.path.join(_HERE, "..", "checkpoints_run5", "final.pt")
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -76,18 +76,39 @@ def main():
         # SPARSE CONTROLS (ID sizes, sparse lengths)
         (15, 30, 2, "Control Sparse (ID N=15, E=30, len=94)"),
         (20, 40, 3, "Control Sparse (ID N=20, E=40, len=124)"),
+        (20, 40, 4, "Control Sparse Repeat (ID N=20, E=40, len=124)"),
         
         # DENSE CONTROL (ID sizes, dense length)
-        (12, 60, 9, "Control Dense (ID N=12, E=60, len=184)"),
+        (12, 60, 5, "Control Dense (ID N=12, E=60, len=184)"),
+        
+        # COMB TEST (N=20, E=54 to 63)
+        (20, 54, 6, "Comb Test (N=20, E=54, len=166)"),
+        (20, 55, 7, "Comb Test (N=20, E=55, len=169)"),
+        (20, 56, 8, "Comb Test (N=20, E=56, len=172)"),
+        (20, 57, 9, "Comb Test (N=20, E=57, len=175)"),
+        (20, 58, 10, "Comb Test (N=20, E=58, len=178)"),
+        (20, 59, 11, "Comb Test (N=20, E=59, len=181)"),
+        (20, 60, 12, "Comb Test (N=20, E=60, len=184)"),
+        (20, 61, 13, "Comb Test (N=20, E=61, len=187)"),
+        (20, 62, 14, "Comb Test (N=20, E=62, len=190)"),
+        (20, 63, 15, "Comb Test (N=20, E=63, len=193)"),
+        
+        # SIZE TEST (N=25 to 50 at E=60)
+        (25, 60, 16, "Size Test (N=25, E=60, len=184)"),
+        (30, 60, 17, "Size Test (N=30, E=60, len=184)"),
+        (35, 60, 18, "Size Test (N=35, E=60, len=184)"),
+        (40, 60, 19, "Size Test (N=40, E=60, len=184)"),
+        (45, 60, 20, "Size Test (N=45, E=60, len=184)"),
+        (50, 60, 21, "Size Test (N=50, E=60, len=184)"),
         
         # SET A (ID nodes, OOD length)
-        (15, 75, 4, "SET A: ID Nodes (N=15), OOD Length (E=75, len=229)"),
-        (20, 100, 5, "SET A: ID Nodes (N=20), OOD Length (E=100, len=304)"),
+        (15, 75, 22, "SET A: ID Nodes (N=15), OOD Length (E=75, len=229)"),
+        (20, 100, 23, "SET A: ID Nodes (N=20), OOD Length (E=100, len=304)"),
         
         # SET B (OOD nodes, ID length)
-        (22, 40, 6, "SET B: OOD Nodes (N=22), ID Length (E=40, len=124)"),
-        (25, 50, 7, "SET B: OOD Nodes (N=25), ID Length (E=50, len=154)"),
-        (30, 60, 8, "SET B: OOD Nodes (N=30), ID Length (E=60, len=184)"),
+        (22, 40, 24, "SET B: OOD Nodes (N=22), ID Length (E=40, len=124)"),
+        (25, 50, 25, "SET B: OOD Nodes (N=25), ID Length (E=50, len=154)"),
+        (30, 60, 26, "SET B: OOD Nodes (N=30), ID Length (E=60, len=184)"),
     ]
     
     run_experiment("DIAGNOSTIC SWEEPS", configs)
