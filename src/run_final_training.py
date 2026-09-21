@@ -22,7 +22,7 @@ _NODE_RANGE = (5, 20)
 class RunConfig:
     num_train_examples: int = 500_000
     num_eval_examples: int = 1_000
-    n_epochs: int = 10
+    n_epochs: int = 30
     train_seed: int = 0
     eval_seed: int = 1
     batch_size: int = 32
@@ -164,7 +164,7 @@ def run(cfg: RunConfig, out_dir: Path) -> Dict[str, Any]:
 
 
 def main() -> None:
-    run(RunConfig(), Path("checkpoints_run4"))
+    run(RunConfig(), Path("checkpoints_run5"))
 
 
 if __name__ == "__main__":
