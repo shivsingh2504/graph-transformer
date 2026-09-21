@@ -1,0 +1,45 @@
+Device: cpu
+
+=======================================================
+ DIAGNOSTIC SWEEPS
+=======================================================
+
+Baseline (ID N=15, E=45, len=139) - 200 graphs
+  V&O: 150 ( 75.0%) | correct_ends: 192 ( 96.0%) | edges_valid: 187 ( 93.5%)
+  Mean Dijkstra path length: 3.0
+
+Baseline (ID N=20, E=60, len=184) - 200 graphs
+  V&O: 144 ( 72.0%) | correct_ends: 197 ( 98.5%) | edges_valid: 179 ( 89.5%)
+  Mean Dijkstra path length: 3.3
+
+Control Sparse (ID N=15, E=30, len=94) - 200 graphs
+  V&O: 124 ( 62.0%) | correct_ends: 183 ( 91.5%) | edges_valid: 153 ( 76.5%)
+  Mean Dijkstra path length: 3.4
+
+Control Sparse (ID N=20, E=40, len=124) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 143 ( 71.5%)
+  Mean Dijkstra path length: 3.6
+
+Control Dense (ID N=12, E=60, len=184) - 200 graphs
+  V&O: 173 ( 86.5%) | correct_ends: 199 ( 99.5%) | edges_valid: 199 ( 99.5%)
+  Mean Dijkstra path length: 2.7
+
+SET A: ID Nodes (N=15), OOD Length (E=75, len=229) - 200 graphs
+  V&O:   1 (  0.5%) | correct_ends:   1 (  0.5%) | edges_valid: 190 ( 95.0%)
+  Mean Dijkstra path length: 2.9
+
+SET A: ID Nodes (N=20), OOD Length (E=100, len=304) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 161 ( 80.5%)
+  Mean Dijkstra path length: 3.2
+
+SET B: OOD Nodes (N=22), ID Length (E=40, len=124) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 130 ( 65.0%)
+  Mean Dijkstra path length: 3.8
+
+SET B: OOD Nodes (N=25), ID Length (E=50, len=154) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   1 (  0.5%) | edges_valid: 195 ( 97.5%)
+  Mean Dijkstra path length: 3.7
+
+SET B: OOD Nodes (N=30), ID Length (E=60, len=184) - 200 graphs
+  V&O: 105 ( 52.5%) | correct_ends: 181 ( 90.5%) | edges_valid: 129 ( 64.5%)
+  Mean Dijkstra path length: 3.9
