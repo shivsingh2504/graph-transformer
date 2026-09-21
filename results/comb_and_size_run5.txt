@@ -1,0 +1,113 @@
+Device: cpu
+
+=======================================================
+ DIAGNOSTIC SWEEPS
+=======================================================
+
+Baseline (ID N=15, E=45, len=139) - 200 graphs
+  V&O: 150 ( 75.0%) | correct_ends: 192 ( 96.0%) | edges_valid: 187 ( 93.5%)
+  Mean Dijkstra path length: 3.0
+
+Baseline (ID N=20, E=60, len=184) - 200 graphs
+  V&O: 144 ( 72.0%) | correct_ends: 197 ( 98.5%) | edges_valid: 179 ( 89.5%)
+  Mean Dijkstra path length: 3.3
+
+Control Sparse (ID N=15, E=30, len=94) - 200 graphs
+  V&O: 124 ( 62.0%) | correct_ends: 183 ( 91.5%) | edges_valid: 153 ( 76.5%)
+  Mean Dijkstra path length: 3.4
+
+Control Sparse (ID N=20, E=40, len=124) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 143 ( 71.5%)
+  Mean Dijkstra path length: 3.6
+
+Control Sparse Repeat (ID N=20, E=40, len=124) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 133 ( 66.5%)
+  Mean Dijkstra path length: 3.7
+
+Control Dense (ID N=12, E=60, len=184) - 200 graphs
+  V&O: 160 ( 80.0%) | correct_ends: 198 ( 99.0%) | edges_valid: 198 ( 99.0%)
+  Mean Dijkstra path length: 2.8
+
+Comb Test (N=20, E=54, len=166) - 200 graphs
+  V&O: 138 ( 69.0%) | correct_ends: 187 ( 93.5%) | edges_valid: 177 ( 88.5%)
+  Mean Dijkstra path length: 3.4
+
+Comb Test (N=20, E=55, len=169) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 165 ( 82.5%)
+  Mean Dijkstra path length: 3.4
+
+Comb Test (N=20, E=56, len=172) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   1 (  0.5%) | edges_valid: 196 ( 98.0%)
+  Mean Dijkstra path length: 3.3
+
+Comb Test (N=20, E=57, len=175) - 200 graphs
+  V&O: 146 ( 73.0%) | correct_ends: 196 ( 98.0%) | edges_valid: 179 ( 89.5%)
+  Mean Dijkstra path length: 3.3
+
+Comb Test (N=20, E=58, len=178) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 161 ( 80.5%)
+  Mean Dijkstra path length: 3.4
+
+Comb Test (N=20, E=59, len=181) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 199 ( 99.5%)
+  Mean Dijkstra path length: 3.4
+
+Comb Test (N=20, E=60, len=184) - 200 graphs
+  V&O: 156 ( 78.0%) | correct_ends: 198 ( 99.0%) | edges_valid: 188 ( 94.0%)
+  Mean Dijkstra path length: 3.2
+
+Comb Test (N=20, E=61, len=187) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 124 ( 62.0%)
+  Mean Dijkstra path length: 3.3
+
+Comb Test (N=20, E=62, len=190) - 200 graphs
+  V&O:   4 (  2.0%) | correct_ends:   9 (  4.5%) | edges_valid: 195 ( 97.5%)
+  Mean Dijkstra path length: 3.4
+
+Comb Test (N=20, E=63, len=193) - 200 graphs
+  V&O:  71 ( 35.5%) | correct_ends: 110 ( 55.0%) | edges_valid: 186 ( 93.0%)
+  Mean Dijkstra path length: 3.2
+
+Size Test (N=25, E=60, len=184) - 200 graphs
+  V&O: 127 ( 63.5%) | correct_ends: 193 ( 96.5%) | edges_valid: 163 ( 81.5%)
+  Mean Dijkstra path length: 3.7
+
+Size Test (N=30, E=60, len=184) - 200 graphs
+  V&O:  95 ( 47.5%) | correct_ends: 185 ( 92.5%) | edges_valid: 131 ( 65.5%)
+  Mean Dijkstra path length: 3.8
+
+Size Test (N=35, E=60, len=184) - 200 graphs
+  V&O:  76 ( 38.0%) | correct_ends: 184 ( 92.0%) | edges_valid: 103 ( 51.5%)
+  Mean Dijkstra path length: 4.2
+
+Size Test (N=40, E=60, len=184) - 200 graphs
+  V&O:  58 ( 29.0%) | correct_ends: 167 ( 83.5%) | edges_valid:  80 ( 40.0%)
+  Mean Dijkstra path length: 4.9
+
+Size Test (N=45, E=60, len=184) - 200 graphs
+  V&O:  45 ( 22.5%) | correct_ends: 166 ( 83.0%) | edges_valid:  69 ( 34.5%)
+  Mean Dijkstra path length: 5.2
+
+Size Test (N=50, E=60, len=184) - 200 graphs
+  V&O:  30 ( 15.0%) | correct_ends: 150 ( 75.0%) | edges_valid:  52 ( 26.0%)
+  Mean Dijkstra path length: 5.6
+
+SET A: ID Nodes (N=15), OOD Length (E=75, len=229) - 200 graphs
+  V&O:   3 (  1.5%) | correct_ends:   4 (  2.0%) | edges_valid: 192 ( 96.0%)
+  Mean Dijkstra path length: 3.0
+
+SET A: ID Nodes (N=20), OOD Length (E=100, len=304) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 169 ( 84.5%)
+  Mean Dijkstra path length: 3.0
+
+SET B: OOD Nodes (N=22), ID Length (E=40, len=124) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 128 ( 64.0%)
+  Mean Dijkstra path length: 3.6
+
+SET B: OOD Nodes (N=25), ID Length (E=50, len=154) - 200 graphs
+  V&O:   0 (  0.0%) | correct_ends:   0 (  0.0%) | edges_valid: 191 ( 95.5%)
+  Mean Dijkstra path length: 3.8
+
+SET B: OOD Nodes (N=30), ID Length (E=60, len=184) - 200 graphs
+  V&O:  90 ( 45.0%) | correct_ends: 178 ( 89.0%) | edges_valid: 117 ( 58.5%)
+  Mean Dijkstra path length: 4.1
