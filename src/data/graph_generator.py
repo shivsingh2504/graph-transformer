@@ -3,6 +3,15 @@ import random
 from dataclasses import dataclass
 from typing import List,Tuple,Dict,Set,Optional
 
+# Node ids are relabelled into the tokenizer's node vocabulary, so this caps N.
+MAX_NODES: int = 50
+
+
+def locked_edge_count(num_nodes: int) -> int:
+    """Edge count mandated by the Run 3 lock: E = min(3N, N(N-1)/2)."""
+    return min(3 * num_nodes, num_nodes * (num_nodes - 1) // 2)
+
+
 @dataclass
 class Graph:
   num_nodes : int
@@ -106,6 +115,12 @@ def generate_random_connected_graph(
     if num_nodes < 2:
         raise ValueError(f"num_nodes must be >= 2, got {num_nodes}.")
 
+    if num_nodes > MAX_NODES:
+        raise ValueError(
+            f"num_nodes must be <= {MAX_NODES} (node ids are relabelled into a "
+            f"{MAX_NODES}-token vocabulary), got {num_nodes}."
+        )
+
     if min_weight <= 0:
         raise ValueError(
             f"min_weight must be > 0 (Dijkstra requires positive weights), "
@@ -184,7 +199,7 @@ def generate_random_connected_graph(
     source, target = _resolve_endpoints(num_nodes, source, target, rng)
 
     # Relabel nodes to a random subset of 0..49
-    sampled_ids = sorted(rng.sample(range(50), num_nodes))
+    sampled_ids = sorted(rng.sample(range(MAX_NODES), num_nodes))
     relabel_map = {i: sampled_ids[i] for i in range(num_nodes)}
     
     relabeled_edges = [(relabel_map[u], relabel_map[v], w) for u, v, w in edges]

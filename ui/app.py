@@ -285,8 +285,9 @@ st.markdown("<hr>", unsafe_allow_html=True)
 # --- RESULTS ---
 st.header("Experiment Validation")
 
-# Check if results.json exists in the current directory or nearby
-results_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run2", "results.json")
+# Metrics come from the same checkpoint the API serves, so the panel and the
+# live predictions below describe one model.
+results_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run5", "results.json")
 try:
     with open(results_path, "r") as f:
         results = json.load(f)
@@ -294,7 +295,14 @@ try:
     colA, colB = st.columns(2)
     with colA:
         val_opt = results.get("eval_summary", {}).get("valid_and_optimal_fraction", 0)
-        st.metric("Training Distribution (5-20 Nodes)", f"{(val_opt * 100):.1f}%", "Valid & Optimal")
+        st.metric("In-Distribution (5-20 Nodes)", f"{(val_opt * 100):.1f}%", "Valid & Optimal")
+
+        if results.get("gate_passed") is False:
+            st.warning(
+                "The 90% acceptance gate was **not met** at this score and was waived "
+                "so out-of-distribution evaluation could proceed. Out of distribution "
+                "(N=25-50) this model scores 0.0%. See `RESULTS.md`."
+            )
         
         # Plot Loss Curve using Plotly
         if "val_loss" in results and "train_loss" in results:

@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import List, Tuple, Dict, Any
 import torch
 
-from data.graph_generator import Graph, generate_random_connected_graph
+from data.graph_generator import Graph, generate_random_connected_graph, locked_edge_count
 from data.dijkstra import run_dijkstra, ShortestPath
 from data.tokenizer import GraphTokenizer
 from model.model import Transformer
@@ -29,18 +29,13 @@ _MODEL: Transformer = None
 _TOKENIZER: GraphTokenizer = None
 _DEVICE: torch.device = None
 
-TEST_RUN2_MODE = False
-
 @app.on_event("startup")
 def load_model():
     global _MODEL, _TOKENIZER, _DEVICE
     _DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Loading model on {_DEVICE}")
     
-    if TEST_RUN2_MODE:
-        ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run2", "final.pt")
-    else:
-        ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run5", "final.pt")
+    ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run5", "final.pt")
         
     if not os.path.exists(ckpt_path):
         print(f"Warning: Model not found at {ckpt_path}. Endpoint prediction will fail.")
@@ -78,30 +73,8 @@ def generate_graph(num_nodes: int = 10, seed: int = None):
         import random
         seed = random.randint(0, 1000000)
     
-    if TEST_RUN2_MODE:
-        import random as rand
-        rng = rand.Random(seed)
-        node_ids = list(range(num_nodes))
-        edges = []
-        connected = [0]
-        # Build a spanning tree
-        for i in range(1, num_nodes):
-            u = rng.choice(connected)
-            v = i
-            w = rng.randint(1, 10)
-            edges.append([min(u, v), max(u, v), w])
-            connected.append(i)
-        source, target = rng.sample(node_ids, 2)
-        return GenerateResponse(
-            num_nodes=num_nodes,
-            node_ids=node_ids,
-            edges=edges,
-            source=source,
-            target=target,
-            seed=seed
-        )
-    else:
-        dynamic_edges = min(3 * num_nodes, num_nodes * (num_nodes - 1) // 2)
+    dynamic_edges = locked_edge_count(num_nodes)
+    try:
         graph = generate_random_connected_graph(
             num_nodes=num_nodes,
             seed=seed,
@@ -109,14 +82,16 @@ def generate_graph(num_nodes: int = 10, seed: int = None):
             min_weight=1,
             max_weight=10
         )
-        return GenerateResponse(
-            num_nodes=graph.num_nodes,
-            node_ids=graph.node_ids,
-            edges=[[u, v, w] for u, v, w in graph.edges],
-            source=graph.source,
-            target=graph.target,
-            seed=graph.seed
-        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return GenerateResponse(
+        num_nodes=graph.num_nodes,
+        node_ids=graph.node_ids,
+        edges=[[u, v, w] for u, v, w in graph.edges],
+        source=graph.source,
+        target=graph.target,
+        seed=graph.seed
+    )
 
 class PredictRequest(BaseModel):
     num_nodes: int

@@ -192,7 +192,7 @@ def main() -> None:
     from pathlib import Path
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", required=True,
-                        help="Path to final.pt, e.g. checkpoints_run2/final.pt")
+                        help="Path to final.pt, e.g. checkpoints_run5/final.pt")
     args = parser.parse_args()
     ckpt_path = Path(args.checkpoint).resolve()
     out_dir = ckpt_path.parent

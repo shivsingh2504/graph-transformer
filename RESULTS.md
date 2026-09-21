@@ -289,11 +289,19 @@ trained length) at 35.5%, against E=66/69/72 (also multiples of 3, lengths
 rule and for the specific trained-length set, with a separate extrapolation
 failure above 184.
 
-The same signature appears at N=15 with E=75 (len 229), measured by both
-diagnostic scripts on disjoint seed ranges: 0.5% V&O / 95.0% edges_valid
-(`length_vs_nodes_run5.txt`) and 1.5% V&O / 96.0% edges_valid
-(`comb_and_size_run5.txt`). Both are n=200, and both contrast sharply with the
-N=15 baseline at the trained len 139 (75.0% V&O). It also appears in the N=18→30
+The same signature appears at N=15 with E=75 (len 229), measured twice on
+disjoint seed ranges: 0.5% V&O / 95.0% edges_valid (`length_vs_nodes_run5.txt`)
+and 1.5% V&O / 96.0% edges_valid (`comb_and_size_run5.txt`). Both are n=200.
+These are two revisions of the *same* script, `diagnostic_length_vs_nodes.py`,
+not two different scripts: its per-config seed is `7_000_000 + 100_000*k`, and
+inserting the comb and size blocks moved this config from `k=4` to `k=22`, i.e.
+from seeds 7.40M to 9.20M. The two measurements are therefore independent
+replications on different graphs, and they agree. Configs whose `k` did not move
+reproduce exactly — the N=15, E=45, len 139 baseline is 150/200 (75.0%) with
+identical `correct_ends` and `edges_valid` counts in both files — which
+independently confirms the generator is deterministic across the two runs. Both
+E=75 figures contrast sharply with that baseline at the trained len 139. It also
+appears in the N=18→30
 sweep (`results/ood_diagnostics_run5.txt`, n=200 per row), where N=18 scores
 74.5% and N=20 77.0% at trained lengths, N=21 (len 193) drops to 41.5%, and
 N=22+ (len 202+) fall to ≤3%. That sweep looked like a size cliff; it is a length
@@ -401,9 +409,10 @@ text. The following are recorded against `run_log.md` and the committed configs:
 - **Runs 1–2 are pre-lock.** They trained on trees, not the locked edge rule, and
   are reported here as baseline context only.
 - **Torch version deviates from the pin** for runs 2 and 5 (see Limitation 8).
-- **`src/api.py` retains a `TEST_RUN2_MODE` flag** with a separate hand-rolled
-  tree generator for the run-2 code path. It is set to `False`, so the demo serves
-  run 5, but the dead branch is still in the shipped API.
+- **`src/api.py` had a `TEST_RUN2_MODE` flag** with a separate hand-rolled tree
+  generator for the run-2 code path. It was set to `False`, so the demo served run
+  5, but the dead branch was in the shipped API. **Removed on 2026-09-22**; the API
+  now has one code path, using the locked edge rule.
 
 ---
 
@@ -429,7 +438,8 @@ existing `final.pt`/`results.json`.
 
 ~20s for the ID control, ~2min for the 3,000-graph OOD set on CPU.
 
-**Diagnostics** (all CPU, all deterministic, all write to `results/`):
+**Diagnostics** (all CPU, all deterministic; arrows show the file each one's
+output belongs in, not always one it writes itself):
 
 ```powershell
 .venv\Scripts\python diagnostics\m9b_eval.py                   # -> results\m9b_run5.txt          (~5 min)
@@ -444,11 +454,29 @@ an in-script `Tee`/`emit`; the others print to stdout and were captured with
 `tee`). No shell redirect is needed for the file to appear, which is why the
 original M9b run command shows none.
 
-`m9b_eval.py` was re-run end-to-end on 2026-09-22 with its output redirected to a
-scratch path, and the result is **byte-for-byte identical** to the committed
-`results/m9b_run5.txt` (all 203 lines, `diff` empty). Greedy decoding on CPU is
-deterministic, so every figure quoted from that file is reproducible from the
-checkpoint on disk.
+**All five diagnostics plus `src/run_ood_eval.py` were re-run end-to-end on
+2026-09-22**, from a foreign working directory and after the code fixes below, to
+confirm both that every path resolves regardless of CWD and that the published
+figures still reproduce. All six exited 0. `m9b_eval.py` and `n50_extra_block.py`
+write straight into `results/`; each rewrote its file **byte-for-byte identically**
+(`git diff results/` empty afterwards; `m9b_run5.txt` all 203 lines). The four that
+print to stdout were diffed against their committed captures:
+`breakdown_run5.txt` (80 lines) and `comb_and_size_run5.txt` (113 lines) are
+identical, and `ood_diagnostics_run5.txt` (174 lines) is identical apart from
+elapsed-time stamps. Greedy decoding on CPU is deterministic, so every figure
+quoted from those files is reproducible from the checkpoint on disk.
+
+Two provenance wrinkles, neither of which changes a number:
+
+- Re-running `src/run_ood_eval.py` reproduces every figure in `results/ood_run5.txt`
+  but not its wording: the committed file says `Taxonomy:` where the script now
+  prints `Taxonomy (exclusive, checked in this order):`. The label was improved
+  after that capture and the file was not regenerated. **No figure differs.**
+- `results/length_vs_nodes_run5.txt` is a capture of
+  `diagnostic_length_vs_nodes.py` from *before* commit `65fbdf9` extended it, so no
+  current command regenerates that exact 45-line file. The same script now produces
+  `comb_and_size_run5.txt`. Both files are still needed, because the E=75
+  measurement quoted above comes from the earlier one.
 
 `m9b_eval.py`, `diagnostic_length_vs_nodes.py` and `n50_extra_block.py` hard-code
 `checkpoints_run5/final.pt` and their output filenames. `breakdown_run5.py` had
@@ -460,6 +488,30 @@ counts (836 / 30 / 952) match `checkpoints_run5/results.json` exactly.
 `n50_extra_block.py` re-measures the disputed N=50, E=60 configuration on a
 disjoint seed range (30,000,000+) using the identical generator and evaluation
 calls as `m9b_eval.py`, so the three N=50 blocks are directly comparable.
+
+**Post-publication code fixes (2026-09-22).** After the figures above were
+produced, several path and API defects were fixed:
+
+- `diagnostics/diagnostic_ood.py` had the same relocation bug as
+  `breakdown_run5.py` — its `_HERE`-relative paths pointed at `diagnostics/src`
+  and `diagnostics/checkpoints_run5`, which do not exist — so it could not run at
+  all, despite being a documented reproduce command.
+- `src/data/dijkstra.py`'s `sys.path` bootstrap sat inside its `__main__` block,
+  *below* the module-level import that needed it, so the file could not be run
+  directly.
+- `src/run_final_training.py` wrote its checkpoint to a CWD-relative path, unlike
+  every other script here; it is now repo-root-relative.
+- `generate_dataset_split` accepted `num_edges` and `edge_density` arguments that
+  it silently ignored, because the locked rule overrides both. Those parameters
+  are removed and the rule now lives in one function, `locked_edge_count()`.
+
+**None of these change any generated graph.** The split generator's output was
+fingerprinted (SHA-256 over node ids, edges, endpoints, seeds, paths and costs)
+before and after the change across four configurations, including the ID and OOD
+ranges used above; the fingerprints are identical. Because node ids are relabelled
+into a 50-token vocabulary, `generate_random_connected_graph` also now rejects
+`num_nodes > 50` explicitly via `MAX_NODES`, instead of failing with the stdlib's
+`ValueError: Sample larger than population`. The test suite is green at 877 passed.
 
 **Demo.** The Streamlit UI in `ui/app.py` talks to the FastAPI service in
 `src/api.py` on port 8000:

@@ -1,8 +1,12 @@
 from __future__ import annotations
 import random
-from data.graph_generator import Graph, generate_random_connected_graph
+from data.graph_generator import (
+    Graph,
+    generate_random_connected_graph,
+    locked_edge_count,
+)
 from data.dijkstra import ShortestPath, run_dijkstra
-from typing import List,Tuple,Optional
+from typing import List,Tuple
 from dataclasses import dataclass,field
 
 _SEED_MULTIPLIER:int = 1_000_000
@@ -27,8 +31,6 @@ def generate_dataset_split(
   node_range : Tuple[int,int],
   base_seed : int,
   *,
-  num_edges : Optional[int] = None,
-  edge_density : Optional[float] = None,
   min_weight :int =1,
   max_weight:int=10
 )->DatasetSplit:
@@ -51,22 +53,12 @@ def generate_dataset_split(
             f"node_range[1] (max_nodes={max_nodes}) must be >= "
             f"node_range[0] (min_nodes={min_nodes})."
     )
-  if num_edges is not None:
-    max_edges : int = min_nodes*(min_nodes-1)//2
-    if num_edges > max_edges:
-      raise ValueError(
-                f"num_edges={num_edges} is unsafe for node_range={node_range}: "
-                f"min_nodes={min_nodes} allows at most {max_edges} edges. "
-                f"Reduce num_edges to <= {max_edges}, raise min_nodes, "
-                f"or use edge_density instead (it scales per graph automatically)."
-      )
   examples : List[Example] = []
   for i in range(num_examples):
     per_ex_seed : int = base_seed * _SEED_MULTIPLIER + i
     node_rng = random.Random(per_ex_seed)
     num_nodes : int  = node_rng.randint(min_nodes,max_nodes)
-    # Calculate dynamic edge count per Run 3 lock
-    dynamic_edges = min(3 * num_nodes, num_nodes * (num_nodes - 1) // 2)
+    dynamic_edges : int = locked_edge_count(num_nodes)
     
     graph : Graph = generate_random_connected_graph(
       num_edges=dynamic_edges,

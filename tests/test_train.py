@@ -40,10 +40,10 @@ def tokenizer() -> GraphTokenizer:
 @pytest.fixture(scope="module")
 def tiny_splits(tokenizer: GraphTokenizer):
     train_split = generate_dataset_split(
-        num_examples=16, node_range=(5, 8), base_seed=0, edge_density=0.5
+        num_examples=16, node_range=(5, 8), base_seed=0
     )
     val_split = generate_dataset_split(
-        num_examples=8, node_range=(5, 8), base_seed=1, edge_density=0.5
+        num_examples=8, node_range=(5, 8), base_seed=1
     )
     return train_split, val_split
 

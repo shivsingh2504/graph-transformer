@@ -8,7 +8,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import pytest
 
-from data.graph_generator import Graph, generate_random_connected_graph
+from data.graph_generator import (
+    Graph,
+    generate_random_connected_graph,
+    locked_edge_count,
+)
 from data.dijkstra import ShortestPath, run_dijkstra
 from data.dataset_generator import DatasetSplit, generate_dataset_split
 
@@ -75,7 +79,6 @@ class TestDeterminism:
             num_examples=num_examples,
             node_range=node_range,
             base_seed=base_seed,
-            edge_density=0.4,
         )
         split1 = generate_dataset_split(**kwargs)
         split2 = generate_dataset_split(**kwargs)
@@ -148,7 +151,7 @@ class TestPairConsistency:
     @pytest.fixture
     def sample_split(self) -> DatasetSplit:
         return generate_dataset_split(
-            num_examples=30, node_range=(5, 20), base_seed=42, edge_density=0.4
+            num_examples=30, node_range=(5, 20), base_seed=42
         )
 
     def test_path_starts_at_source(self, sample_split: DatasetSplit) -> None:
@@ -162,7 +165,7 @@ class TestPairConsistency:
     def test_path_nodes_in_valid_range(self, sample_split: DatasetSplit) -> None:
         for graph, sp in sample_split.examples:
             for node in sp.path:
-                assert 0 <= node < graph.num_nodes
+                assert node in graph.node_ids
 
     def test_path_is_simple(self, sample_split: DatasetSplit) -> None:
         for graph, sp in sample_split.examples:
@@ -205,7 +208,7 @@ class TestPairConsistency:
 
     def test_dijkstra_cross_check(self) -> None:
         split = generate_dataset_split(
-            num_examples=20, node_range=(5, 15), base_seed=0, edge_density=0.4
+            num_examples=20, node_range=(5, 15), base_seed=0
         )
         for graph, sp in split.examples:
             recomputed = run_dijkstra(graph)
@@ -275,41 +278,18 @@ class TestInvalidArgs:
                 num_examples=1, node_range=(5, 10), base_seed=0, min_weight=0
             )
 
-    def test_invalid_edge_density_propagates(self) -> None:
-        with pytest.raises(ValueError, match="edge_density"):
-            generate_dataset_split(
-                num_examples=1, node_range=(5, 10), base_seed=0, edge_density=0.0
-            )
-
-    def test_num_edges_too_large_for_min_nodes_raises(self) -> None:
-        with pytest.raises(ValueError, match="num_edges"):
-            generate_dataset_split(
-                num_examples=10, node_range=(5, 20), base_seed=0, num_edges=15
-            )
-
-    def test_num_edges_too_large_for_min_nodes_raises_at_boundary(self) -> None:
-        min_nodes = 6
-        max_edges_for_min = min_nodes * (min_nodes - 1) // 2
-        with pytest.raises(ValueError, match="num_edges"):
-            generate_dataset_split(
-                num_examples=5,
-                node_range=(min_nodes, 20),
-                base_seed=0,
-                num_edges=max_edges_for_min + 1,
-            )
-
-    def test_num_edges_at_max_for_min_nodes_is_accepted(self) -> None:
-        min_nodes = 6
-        max_edges_for_min = min_nodes * (min_nodes - 1) // 2
+    def test_edge_count_is_always_within_what_n_allows(self) -> None:
+        # E is derived from the lock rather than supplied, so an unsafe
+        # edge count cannot be requested.
         split = generate_dataset_split(
-            num_examples=5,
-            node_range=(min_nodes, min_nodes),
-            base_seed=0,
-            num_edges=max_edges_for_min,
+            num_examples=5, node_range=(6, 20), base_seed=0
         )
         assert split.num_examples == 5
         for graph, _ in split.examples:
-            assert len(graph.edges) == max_edges_for_min
+            expected = locked_edge_count(graph.num_nodes)
+            assert len(graph.edges) == expected
+            assert expected <= graph.num_nodes * (graph.num_nodes - 1) // 2
+            assert expected >= graph.num_nodes - 1
 
     def test_seed_collision_guard_raises_on_excessive_num_examples(self) -> None:
         from data.dataset_generator import _SEED_MULTIPLIER
@@ -349,7 +329,7 @@ class TestMetadata:
             DatasetSplit(examples=[], num_examples=5, node_range=(5, 10), base_seed=0)
 
 
-class TestWeightDensityPassThrough:
+class TestWeightAndLockedEdgeCount:
     @pytest.mark.parametrize("seed", range(5))
     def test_custom_weight_bounds_respected(self, seed: int) -> None:
         split = generate_dataset_split(
@@ -366,34 +346,28 @@ class TestWeightDensityPassThrough:
             for _, _, w in graph.edges:
                 assert 1 <= w <= 10
 
-    def test_edge_density_changes_edge_count(self) -> None:
-        split_sparse = generate_dataset_split(
-            num_examples=20, node_range=(10, 10), base_seed=0, edge_density=0.2
-        )
-        split_dense = generate_dataset_split(
-            num_examples=20, node_range=(10, 10), base_seed=0, edge_density=0.8
-        )
-        avg_sparse = sum(len(g.edges) for g, _ in split_sparse.examples) / 20
-        avg_dense = sum(len(g.edges) for g, _ in split_dense.examples) / 20
-        assert avg_dense > avg_sparse
-
-    def test_spanning_tree_mode_when_no_density_given(self) -> None:
-        split = generate_dataset_split(num_examples=10, node_range=(8, 8), base_seed=0)
-        for graph, _ in split.examples:
-            assert len(graph.edges) == graph.num_nodes - 1
-
-    def test_num_edges_mode_respected(self) -> None:
+    @pytest.mark.parametrize("n", [5, 6, 7, 8, 20, 50])
+    def test_edge_count_follows_locked_rule(self, n: int) -> None:
         split = generate_dataset_split(
-            num_examples=10, node_range=(8, 8), base_seed=0, num_edges=12
+            num_examples=5, node_range=(n, n), base_seed=0
         )
         for graph, _ in split.examples:
-            assert len(graph.edges) == 12
+            assert len(graph.edges) == locked_edge_count(n)
 
-    def test_edge_density_is_safe_with_wide_node_range(self) -> None:
+    def test_locked_rule_switches_from_complete_graph_to_3n(self) -> None:
+        # N(N-1)/2 binds up to N=7; 3N binds from N=8 upward.
+        for n in (5, 6, 7):
+            assert locked_edge_count(n) == n * (n - 1) // 2
+        for n in (8, 20, 50):
+            assert locked_edge_count(n) == 3 * n
+
+    def test_wide_node_range_edge_counts_follow_lock(self) -> None:
         split = generate_dataset_split(
-            num_examples=20, node_range=(5, 20), base_seed=0, edge_density=0.4
+            num_examples=20, node_range=(5, 20), base_seed=0
         )
         assert split.num_examples == 20
+        for graph, _ in split.examples:
+            assert len(graph.edges) == locked_edge_count(graph.num_nodes)
 
 
 class TestSeedScheme:

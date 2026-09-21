@@ -57,7 +57,7 @@ def tiny_model(tokenizer: GraphTokenizer) -> Transformer:
 @pytest.fixture(scope="module")
 def tiny_split() -> DatasetSplit:
     return generate_dataset_split(
-        num_examples=10, node_range=(4, 6), base_seed=2, edge_density=0.5
+        num_examples=10, node_range=(4, 6), base_seed=2
     )
 
 
@@ -99,8 +99,7 @@ class TestAPIAssumptions:
     def test_graph_adjacency_returns_correct_structure(self, tiny_graph: Graph) -> None:
         adj = tiny_graph.adjacency()
         assert isinstance(adj, dict)
-        for node_id in range(tiny_graph.num_nodes):
-            assert node_id in adj
+        assert set(adj) == set(tiny_graph.node_ids)
         for neighbours in adj.values():
             for item in neighbours:
                 assert len(item) == 2

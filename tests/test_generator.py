@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 import pytest 
-from data.graph_generator import Graph,generate_random_connected_graph
+from data.graph_generator import Graph,generate_random_connected_graph,MAX_NODES
 
 def _is_connected(graph: Graph)->bool:
   if graph.num_nodes == 0 :
@@ -35,7 +35,7 @@ def _max_edges(n:int)->int:
 class TestReproducibility:
   @pytest.mark.parametrize(
     "num_nodes,seed",
-    [(2, 0), (5, 1), (10, 99), (20, 12345), (50, 999), (100, 7)],
+    [(2, 0), (5, 1), (10, 99), (20, 12345), (50, 999)],
   )
   def test_same_seed_same_graph(self,num_nodes:int,seed:int)->None:
     g1 = generate_random_connected_graph(num_nodes, seed)
@@ -44,6 +44,11 @@ class TestReproducibility:
     assert g1.edges == g2.edges
     assert g1.source == g2.source
     assert g1.target == g2.target
+
+  @pytest.mark.parametrize("num_nodes", [51, 100])
+  def test_num_nodes_above_cap_raises(self, num_nodes: int) -> None:
+    with pytest.raises(ValueError, match=f"num_nodes must be <= {MAX_NODES}"):
+      generate_random_connected_graph(num_nodes, seed=7)
     
   @pytest.mark.parametrize("seed", [0, 42, 1337])
   def test_same_seed_with_density(self,seed:int)->None:

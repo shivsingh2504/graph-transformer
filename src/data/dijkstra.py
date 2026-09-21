@@ -3,8 +3,18 @@ from __future__ import annotations
 
 import heapq
 import math
+import os
+import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
+
+# This file lives at src/data/dijkstra.py.  One ".." reaches src/, which is the
+# package root that "from data.X import" requires; two levels would overshoot to
+# the project root.  Needed before the import below so the file also runs
+# directly as a script.
+_SRC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _SRC not in sys.path:
+    sys.path.insert(0, _SRC)
 
 from data.graph_generator import Graph
 
@@ -97,14 +107,6 @@ def run_dijkstra(graph: Graph) -> ShortestPath:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import os
-    import sys
-
-    # dijkstra.py lives at src/data/dijkstra.py.
-    # One ".." reaches src/, which is the package root that "from data.X import"
-    # requires.  Two levels would overshoot to the project root.
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
     from data.graph_generator import generate_random_connected_graph
 
     g = generate_random_connected_graph(num_nodes=8, seed=42, edge_density=0.4)

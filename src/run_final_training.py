@@ -16,6 +16,7 @@ from run_experiment import run_experiment
 from train.checkpoint import save_checkpoint
 
 _NODE_RANGE = (5, 20)
+_ROOT = Path(__file__).resolve().parent.parent
 
 
 @dataclass(frozen=True)
@@ -164,7 +165,7 @@ def run(cfg: RunConfig, out_dir: Path) -> Dict[str, Any]:
 
 
 def main() -> None:
-    run(RunConfig(), Path("checkpoints_run5"))
+    run(RunConfig(), _ROOT / "checkpoints_run5")
 
 
 if __name__ == "__main__":

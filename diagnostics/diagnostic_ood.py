@@ -4,7 +4,7 @@ import time
 import numpy as np
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(_HERE, "src"))
+sys.path.insert(0, os.path.join(_HERE, "..", "src"))
 
 import torch
 from data.dataset_generator import generate_dataset_split
@@ -12,7 +12,7 @@ from data.tokenizer import GraphTokenizer
 from eval.evaluate import evaluate_example, _greedy_decode, _decode_token_sequence
 from model.model import Transformer
 
-CKPT_PATH = os.path.join(_HERE, "checkpoints_run5", "final.pt")
+CKPT_PATH = os.path.join(_HERE, "..", "checkpoints_run5", "final.pt")
 
 def bin_for(n):
     if 5 <= n <= 9: return (5,9)

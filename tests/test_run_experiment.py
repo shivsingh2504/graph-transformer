@@ -346,7 +346,7 @@ class TestGradClipping:
         tokenizer = GraphTokenizer(min_weight=1, max_weight=10)
         num_ex = 4
         split = generate_dataset_split(
-            num_examples=num_ex, node_range=(5, 8), base_seed=42, edge_density=0.5
+            num_examples=num_ex, node_range=(5, 8), base_seed=42
         )
         criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
         # batch_size == num_ex -> exactly one optimizer step per epoch
