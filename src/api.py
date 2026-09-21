@@ -29,7 +29,7 @@ _MODEL: Transformer = None
 _TOKENIZER: GraphTokenizer = None
 _DEVICE: torch.device = None
 
-TEST_RUN2_MODE = True
+TEST_RUN2_MODE = False
 
 @app.on_event("startup")
 def load_model():
@@ -40,7 +40,7 @@ def load_model():
     if TEST_RUN2_MODE:
         ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run2", "final.pt")
     else:
-        ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run3", "final.pt")
+        ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run5", "final.pt")
         
     if not os.path.exists(ckpt_path):
         print(f"Warning: Model not found at {ckpt_path}. Endpoint prediction will fail.")
