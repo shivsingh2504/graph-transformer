@@ -136,9 +136,9 @@ By size:
 
 Failure taxonomy over the 164 failures (exclusive, checked in this order):
 suboptimal 113, invalid edge 21, cycle 16, wrong endpoint 14. Structural failures
-(wrong endpoint + invalid edge + cycle) are 51 of 164; cost errors are the other
-113. Cross-check: 116 graphs have `valid_path=True` but are not optimal = 113
-suboptimal + 3 that are valid paths with wrong endpoints.
+(wrong endpoint + invalid edge + cycle) are 51 of 164; cost errors are the
+other 113. Cross-check: 116 graphs have `valid_path=True` but are not optimal
+= 113 suboptimal + 3 that are valid paths with wrong endpoints.
 
 Weight sensitivity (Def A, the locked definition — Dijkstra hop count differs from
 BFS minimum hops): 368 of 1,000 ID graphs (36.8%) are weight-sensitive, matching
