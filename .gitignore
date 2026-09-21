@@ -4,6 +4,17 @@ __pycache__/
 .vscode/
 /data/
 checkpoints/
+checkpoints_*/
 *.pt
 *.pth
 run.log
+
+# Local agent/tooling config
+.agents/
+.claude/
+
+# Demo scaffolding and local helpers
+lib/
+scratch/
+launch.ps1
+ui/.streamlit/
