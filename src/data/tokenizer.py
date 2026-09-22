@@ -77,15 +77,18 @@ class GraphTokenizer:
                 "unsupported."
       )
     ids : List[int] = []
+    # Query block first (positions 0-3)
+    ids.append(self.src_token_id)
+    ids.append(self._node_token_id(graph.source))
+    ids.append(self.dst_token_id)
+    ids.append(self._node_token_id(graph.target))
+    
+    # Edge block follows (positions 4 onward)
     for (u, v, w) in self._canonical_edges(graph):
       ids.append(self._node_token_id(u))
       ids.append(self._node_token_id(v))
       ids.append(self._weight_token_id(w))
     
-    ids.append(self.src_token_id)
-    ids.append(self._node_token_id(graph.source))
-    ids.append(self.dst_token_id)
-    ids.append(self._node_token_id(graph.target))
     return ids
   
   def encode_path(self,shortest_path:ShortestPath)->List[int]:

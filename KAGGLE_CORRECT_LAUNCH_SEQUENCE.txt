@@ -1,0 +1,149 @@
+================================================================================
+                    KAGGLE RUN 7: FINAL LAUNCH SEQUENCE
+================================================================================
+
+??  CRITICAL: Correct execution order to avoid re-runs and session loss
+
+================================================================================
+                           TONIGHT (Before bed)
+================================================================================
+
+STEP 1: Commit & push to GitHub
+  Command:
+    cd c:\Users\reals.DESKTOP-B4CI38M\Desktop\graph
+    git status
+    git add -A
+    git commit -m "Add query-block-fixed-positions bugfix (validated at 1a7701d)"
+    git push origin main
+  
+  Verify: Check GitHub shows new commit
+
+STEP 2: On Kaggle (create new notebook)
+  Action: Create blank Python 3 notebook
+  
+STEP 3: Add Cell 1 to notebook
+  • Copy entire KAGGLE_CELL_1_SETUP.py contents
+  • Paste into first notebook cell
+  • DO NOT RUN YET — just paste
+  • Read through once to verify it looks right
+  
+STEP 4: Add Cell 2 to notebook
+  • Copy entire KAGGLE_CELL_2_TRAINING.py contents
+  • Paste into second notebook cell
+  • DO NOT RUN YET — just paste
+  • Read through once to verify it looks right
+
+STEP 5: Verify GPU is enabled
+  • Top right: Settings/Accelerator
+  • Select: GPU T4 x2 (or any GPU available)
+  • Save
+  
+STEP 6: Save & Run All (Commit) — DO THIS ONCE
+  • Top right: "Save Version"
+  • Select: "Save & Run All (Commit)" ? NOT "Run"
+  • This kicks off BOTH cells as one background batch job
+  • Notebook will execute top to bottom unattended
+  
+STEP 7: Confirm in Versions tab
+  • Click "Versions" tab (left sidebar)
+  • Should see new entry showing "Running" or "Queued"
+  • If it shows your username/commit hash, you're good
+  
+STEP 8: Close tab and shutdown
+  • Close browser tab (training continues on Kaggle servers)
+  • Shutdown laptop
+  • Sleep
+  • Do NOT wait or monitor interactively
+
+================================================================================
+                           TOMORROW MORNING (Check results)
+================================================================================
+
+STEP 9: Open Kaggle Versions tab
+  • Refresh browser / log back in
+  • Go to the notebook
+  • Click "Versions" tab
+  • Check if training finished
+  
+STEP 10: Review logs and outputs
+  • If "Running" or "Queued": still training (may take up to 12h)
+  • If "Completed": training finished
+  • Scroll through output to see loss curves
+  • Download checkpoints_run7/ to your machine
+  
+STEP 11: Local evaluation
+  • Run: python src/run_ood_eval.py
+  • Run: python diagnostics/m9b_eval.py
+  • Check gate: ID >= 84.1%, OOD endpoints >= 90%
+
+================================================================================
+                           WHY THIS SEQUENCE MATTERS
+================================================================================
+
+? WRONG:
+  1. Run Cell 1 interactively
+  2. Run Cell 2 interactively
+  3. Wait 6.5 hours watching
+  4. Click "Save & Run All (Commit)"
+  
+  Problem: "Save & Run All (Commit)" re-runs everything from scratch
+  ? You either sit watching (defeats purpose)
+  ? Or close tab mid-run (session loss risk)
+  ? Or commit and accidentally start a 2nd 6.5-hour run
+
+? CORRECT:
+  1. Paste both cells (don't run)
+  2. Click "Save & Run All (Commit)" immediately
+  3. Confirm "Running" in Versions
+  4. Close tab and shutdown
+  5. Check results tomorrow
+  
+  Benefit: Single execution on Kaggle servers, survives disconnect
+           Training runs unattended, outputs persist in /kaggle/working/
+
+================================================================================
+                           WHAT WILL HAPPEN
+================================================================================
+
+When you click "Save & Run All (Commit)":
+  • Kaggle spins up a fresh container
+  • Executes Cell 1 (checks GPU, verifies query block, etc.)
+  • Executes Cell 2 (runs python src/run_training_run7.py)
+  • Runs for ~6.5 hours in background
+  • Saves outputs to /kaggle/working/checkpoints_run7/
+  • Outputs persist (you can download them tomorrow)
+  • Job completes; notebook shows full execution log
+
+When you close the tab:
+  • Training continues on Kaggle servers (you're not involved)
+  • No session timeout (Kaggle handles it)
+  • Everything is safe and autonomous
+
+When you check tomorrow:
+  • Versions tab shows execution completed
+  • Scroll to see all output/loss curves
+  • Download checkpoints_run7/
+  • Run local evaluation
+
+================================================================================
+                           FINAL CHECKLIST
+================================================================================
+
+Before you click "Save & Run All (Commit)":
+  ? Cell 1 is pasted and reads correctly (git checkout, GPU check, query sanity)
+  ? Cell 2 is pasted and reads correctly (training command, loss display)
+  ? GPU is selected in notebook settings (Accelerator ? T4 x2)
+  ? You are logged into Kaggle
+  ? Local git commit is done and pushed
+  ? You have the correct hash values:
+    - Run 6 baseline: d154c74
+    - Run 7 validated: 1a7701d (the one being checked out)
+
+You're ready.
+
+================================================================================
+
+Launch: Click "Save & Run All (Commit)" once. Walk away. Train overnight.
+
+Good luck. ??
+

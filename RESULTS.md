@@ -318,9 +318,11 @@ positional cue tied to the trained length grid rather than a content-based rule
 off-grid. Sinusoidal PE with `max_len=5000` rules out an architectural cause;
 this is a data-coverage failure.
 
-The prediction that follows — and the reason run 6 would move `[SRC]`/`[DST]` to
+The prediction that follows — and the reason run 7 would move `[SRC]`/`[DST]` to
 the front of the input — is that a fixed marker offset should remove the
-length sensitivity entirely. **This is untested.**
+length sensitivity entirely. **This is untested.** (Note: an earlier draft of
+this document called this change "run 6"; it was renamed run 7 when the
+epochs-30→60 run took that slot.)
 
 ---
 

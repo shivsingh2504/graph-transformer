@@ -1,0 +1,96 @@
+================================================================================
+                    KAGGLE RUN 7: PRE-COMMIT CHECKLIST
+================================================================================
+
+? COMMIT HASHES VERIFIED
+  • Run 6 baseline: d154c74 (Add run 6: run 5 with n_epochs 30 -> 60)
+  • Run 7 validated: 1a7701d (Draft run 7 validation scripts)
+  • Current HEAD: 92e13ea (Fix Pyvis graph shift - UNRELATED, don't train on this)
+  
+  ACTION: Checkout 1a7701d specifically, not HEAD
+
+? FIX INTEGRITY VERIFIED
+  • src/data/tokenizer.py: Modified (query block reordering)
+  • src/model/*.py: Unchanged vs run 6 ?
+  • src/train/train.py: Unchanged vs run 6 ?
+  • src/run_experiment.py: Unchanged vs run 6 ?
+  • src/run_training_run7.py: Exists ?
+
+? TEST VALIDATION
+  • 69 unit tests: PASS
+  • 46 correctness tests: PASS
+  • 11 backward compatibility tests: PASS
+  • 12 checkpoint infrastructure tests: PASS
+  • Phase 6 diagnostic: PASS (70 sec, loss decreases)
+
+? REQUIREMENTS.txt
+  • Standard ML packages (numpy, torch, networkx, etc.)
+  • All available on Kaggle by default
+  • No pip install needed
+
+? KAGGLE NOTEBOOK CELLS READY
+  • Cell 1: KAGGLE_CELL_1_SETUP.py
+    - Clones repo
+    - Checks out 1a7701d
+    - Verifies diffs (tokenizer changed, model/train unchanged)
+    - Checks GPU available
+    - Sanity-checks query block is at [0,1,2,3]
+  
+  • Cell 2: KAGGLE_CELL_2_TRAINING.py
+    - Runs: python src/run_training_run7.py
+    - Shows loss progression
+    - Displays ID evaluation results
+
+? DEPLOYMENT STEPS (DO THIS NOW)
+  
+  1. Commit locally:
+     cd c:\Users\reals.DESKTOP-B4CI38M\Desktop\graph
+     git add -A
+     git commit -m "Add query-block-fixed-positions bugfix (validated at 1a7701d)"
+     git push origin main
+  
+  2. On Kaggle:
+     a) Create new notebook
+     b) Paste Cell 1 code (setup & verification)
+     c) Run it ? should verify all checks pass
+     d) Paste Cell 2 code (training)
+     e) Run it ? training starts
+  
+  3. AFTER training completes (~6.5 hours):
+     a) Click "Save Version"
+     b) Select "Save & Run All (Commit)" — NOT "Run"
+     c) Wait for Versions tab to show "Queued" or "Running"
+     d) THEN close browser/shutdown laptop
+  
+  4. Monitor next day:
+     - Download checkpoints_run7/ from Kaggle
+     - Run local evaluation: src/run_ood_eval.py
+     - Check gate: ID >= 84.1%, OOD endpoints >= 90%
+
+================================================================================
+                           FINAL SANITY CHECK
+================================================================================
+
+Before you kick this off, confirm:
+  ? You have your Kaggle API credentials set up
+  ? GPU T4 x2 is selected in notebook settings (Accelerator)
+  ? You have the updated Cell 1 & Cell 2 code (not older versions)
+  ? You understand "Save & Run All (Commit)" is the critical step post-training
+  ? You have git and your remote set up (verify: git remote -v)
+
+Expected outcomes tomorrow:
+  • ID V&O: >= 84.1% (maintain run 6 level, allow -2 pt margin)
+  • OOD endpoints (N=21-30): >= 90% (PRIMARY SUCCESS METRIC)
+  • Total run time: ~6.5 hours on Kaggle GPU
+
+If you see:
+  • Loss staying flat or going up ? restart, investigate
+  • NaNs in loss ? verify GPU is enabled
+  • Endpoints still 0% after training ? fix didn't help, root cause different
+
+================================================================================
+
+You're cleared for launch. Commit to your repo and schedule Kaggle run.
+
+Good luck! ??
+

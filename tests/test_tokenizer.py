@@ -92,18 +92,32 @@ class TestEncodeGraph:
         self, tokenizer: GraphTokenizer, simple_graph: Graph
     ) -> None:
         encoded = tokenizer.encode_graph(simple_graph)
-        src_pos = encoded.index(tokenizer.src_token_id)
-        dst_pos = encoded.index(tokenizer.dst_token_id)
+        # Query block at fixed positions [0, 1, 2, 3]
+        assert encoded[0] == tokenizer.src_token_id
+        assert encoded[1] == tokenizer.token_to_id[f"node_{simple_graph.source}"]
+        assert encoded[2] == tokenizer.dst_token_id
+        assert encoded[3] == tokenizer.token_to_id[f"node_{simple_graph.target}"]
 
-        assert encoded[src_pos + 1] == tokenizer.token_to_id[f"node_{simple_graph.source}"]
-        assert encoded[dst_pos + 1] == tokenizer.token_to_id[f"node_{simple_graph.target}"]
-
-    def test_src_dst_markers_at_end(
+    def test_src_dst_markers_at_front(
         self, tokenizer: GraphTokenizer, simple_graph: Graph
     ) -> None:
         encoded = tokenizer.encode_graph(simple_graph)
-        assert encoded[-4] == tokenizer.src_token_id
-        assert encoded[-2] == tokenizer.dst_token_id
+        assert encoded[0] == tokenizer.src_token_id
+        assert encoded[2] == tokenizer.dst_token_id
+
+    def test_query_block_at_front(
+        self, tokenizer: GraphTokenizer, simple_graph: Graph
+    ) -> None:
+        """Query block (SRC, src_node, DST, dst_node) is at positions 0-3."""
+        encoded = tokenizer.encode_graph(simple_graph)
+        # Positions 0-3: query block
+        assert encoded[0] == tokenizer.src_token_id
+        assert encoded[1] == tokenizer._node_token_id(simple_graph.source)
+        assert encoded[2] == tokenizer.dst_token_id
+        assert encoded[3] == tokenizer._node_token_id(simple_graph.target)
+        
+        # Edge block follows
+        assert len(encoded) == 3 * len(simple_graph.edges) + 4
 
     def test_bos_eos_not_in_encode_graph(
         self, tokenizer: GraphTokenizer, simple_graph: Graph

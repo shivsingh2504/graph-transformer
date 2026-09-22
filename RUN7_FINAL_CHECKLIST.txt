@@ -1,0 +1,150 @@
+================================================================================
+                    RUN 7 LAUNCH: FINAL PRE-GO CHECKLIST
+================================================================================
+
+DO THIS NOW (not right before bed) — Paste, launch, watch 2 minutes, then sleep
+
+================================================================================
+                           IMMEDIATE ACTIONS (Next 15 min)
+================================================================================
+
+? STEP 1: Commit & push (local machine)
+  cd c:\Users\reals.DESKTOP-B4CI38M\Desktop\graph
+  git status
+  git add -A
+  git commit -m "Add query-block-fixed-positions bugfix (validated at 1a7701d)"
+  git push origin main
+  
+  Verify: Check GitHub — should show new commit
+
+? STEP 2: Create Kaggle notebook
+  • Go to kaggle.com
+  • Create new notebook (Python 3, blank)
+  • Name it: "Graph Transformer Run 7"
+
+? STEP 3: Add Cell 1
+  • Copy all of KAGGLE_CELL_1_SETUP.py
+  • Paste into first notebook cell
+  • Do NOT run yet
+
+? STEP 4: Add Cell 2
+  • Copy all of KAGGLE_CELL_2_TRAINING.py
+  • Paste into second notebook cell
+  • Do NOT run yet
+
+? STEP 5: Enable GPU (critical!)
+  • Top right: Settings icon
+  • Accelerator: Select "GPU T4 x2"
+  • Save
+
+? STEP 6: Launch
+  • Top right: "Save Version"
+  • Select: "Save & Run All (Commit)" (not "Run")
+  • Click
+
+================================================================================
+                           WATCH FOR 2-3 MINUTES (do this now)
+================================================================================
+
+After clicking "Save & Run All (Commit)":
+
+1. Notebook should start executing
+2. Go to "Versions" tab (left sidebar)
+3. Watch for status changes:
+
+   ? GOOD SIGNS:
+     - Status shows "Running" or "Queued"
+     - You see Cell 1 output appearing (git status, GPU check, query-block sanity)
+     - No immediate error messages in red
+     - GPU shows as available (CUDA: True)
+
+   ? BAD SIGNS (stop and investigate):
+     - Status shows "Failed" or immediate red error
+     - "AssertionError" or "ModuleNotFoundError" in output
+     - GPU shows as False (would need to restart and re-enable GPU)
+     - Git checkout failed (hash issue)
+
+4. If you see GOOD SIGNS after 1-2 minutes:
+   • Job is running correctly
+   • Cell 1 verified the fix is in place
+   • Cell 2 will start training soon
+   • SAFE TO CLOSE TAB AND SLEEP
+
+5. If you see BAD SIGNS:
+   • Stop the job
+   • Fix the issue
+   • Paste cells again (or edit in place)
+   • Re-launch with "Save & Run All (Commit)"
+
+================================================================================
+                           AFTER 2 MIN CHECK — GO TO SLEEP
+================================================================================
+
+Once you confirm "Running" in Versions tab and no immediate errors:
+  • Close the browser tab
+  • Shut down laptop
+  • Sleep
+  • Training continues on Kaggle servers unattended
+  • You'll wake up to results tomorrow
+
+Expected overnight:
+  • Cell 1: 1-2 minutes (setup checks)
+  • Cell 2: 6-7 hours (training)
+  • Total: ~6.5-7 hours
+  • Finish time: depends when you launch, usually done by morning
+
+================================================================================
+                           WHAT TO CHECK TOMORROW
+================================================================================
+
+Morning checklist:
+  ? Open Kaggle, go to notebook
+  ? Click "Versions" tab
+  ? Status should show "Completed"
+  ? Scroll through Cell 2 output to see:
+    - Loss curves (should decrease)
+    - Final epoch loss values
+    - ID evaluation results
+  ? Download checkpoints_run7/ folder to your machine
+  ? Run local evaluation:
+    python src/run_ood_eval.py
+    python diagnostics/m9b_eval.py
+  ? Check gate:
+    - ID V&O >= 84.1% (allow -2 pt from run 6's 86.1%)
+    - OOD endpoints >= 90% (primary success metric)
+
+Expected good outcome:
+  • ID ~85-86% (maintains run 6 level)
+  • OOD endpoints at N=21-30: 60-90%+ (vs 0-0.5% in run 6)
+  • If endpoints are >> 0%, fix worked
+
+Expected bad outcome:
+  • ID drops below 82% (regression)
+  • OOD endpoints stay at 0-5% (fix didn't help)
+  • Root cause different than expected
+
+================================================================================
+                           TIMING SUMMARY
+================================================================================
+
+Right now:
+  - 15 min: Commit, paste cells, launch
+  - 2-3 min: Watch for "Running" status
+  - Then: Sleep
+
+Tomorrow:
+  - Check Versions tab
+  - Download results
+  - Run evaluation
+  - Interpret results
+
+Total commitment: 20 minutes tonight, 10 minutes tomorrow morning.
+
+================================================================================
+
+You're ready. Do this now (not at 11:45 PM).
+Launch, watch 2 min, sleep.
+Report back with results tomorrow.
+
+Good luck. ??
+
