@@ -52,51 +52,123 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-def generate_graph(num_nodes=15):
+def generate_graph(num_nodes, seed=None):
+    """Return (graph_data, error). Never silently returns None on failure."""
+    params = {"num_nodes": num_nodes}
+    if seed is not None:
+        params["seed"] = seed
     try:
-        res = requests.get(f"{API_BASE}/generate", params={"num_nodes": num_nodes})
-        if res.status_code == 200:
-            return res.json()
-        return None
+        res = requests.get(f"{API_BASE}/generate", params=params, timeout=30)
     except requests.exceptions.ConnectionError:
-        return None
+        return None, (
+            "Cannot reach the model API at "
+            f"{API_BASE}. Start it with "
+            "`.venv\\Scripts\\python -m uvicorn src.api:app --port 8000`."
+        )
+    except requests.exceptions.Timeout:
+        return None, "The model API timed out after 30s."
+    if res.status_code != 200:
+        try:
+            detail = res.json().get("detail", res.text)
+        except ValueError:
+            detail = res.text
+        return None, f"API returned HTTP {res.status_code}: {detail}"
+    return res.json(), None
+
 
 def predict_path(graph_data):
+    """Return (prediction, error)."""
     try:
-        res = requests.post(f"{API_BASE}/predict", json=graph_data)
-        if res.status_code == 200:
-            return res.json()
-        return None
+        res = requests.post(f"{API_BASE}/predict", json=graph_data, timeout=120)
     except requests.exceptions.ConnectionError:
-        return None
+        return None, f"Cannot reach the model API at {API_BASE}."
+    except requests.exceptions.Timeout:
+        return None, "Inference timed out after 120s."
+    if res.status_code != 200:
+        try:
+            detail = res.json().get("detail", res.text)
+        except ValueError:
+            detail = res.text
+        return None, f"API returned HTTP {res.status_code}: {detail}"
+    return res.json(), None
+
+
+# Training band and measured valid-and-optimal rates. The per-size figures are
+# transcribed from results/ood_diagnostics_run5.txt (n=200 graphs per size); the
+# band figure is checkpoints_run5/results.json eval_summary (n=1000).
+TRAIN_LO, TRAIN_HI = 5, 20
+ID_BAND_RATE = 83.6
+OOD_BAND_RATE = 0.0
+MEASURED_VO = {21: 41.5, 22: 3.0, 23: 0.0, 24: 0.0, 25: 0.5, 26: 0.0, 28: 0.0, 30: 0.0}
+
+
+def distribution_badge(num_nodes):
+    """(streamlit_severity, label, detail) for the current graph size."""
+    if TRAIN_LO <= num_nodes <= TRAIN_HI:
+        return (
+            "success",
+            "In distribution",
+            f"Trained on N={TRAIN_LO}\u2013{TRAIN_HI}. Measured valid & optimal on that "
+            f"band: {ID_BAND_RATE}% (n=1000). The gate was 90%, so expect roughly "
+            "one graph in six to be wrong even here.",
+        )
+    if num_nodes in MEASURED_VO:
+        measured = f"Measured valid & optimal at N={num_nodes}: {MEASURED_VO[num_nodes]}% (n=200)."
+    else:
+        measured = (
+            f"Not measured at N={num_nodes} individually; the N=25\u201350 band scores "
+            f"{OOD_BAND_RATE}% (n=3000)."
+        )
+    return (
+        "error",
+        "Out of distribution",
+        f"The model was trained on N={TRAIN_LO}\u2013{TRAIN_HI} only, so N={num_nodes} is "
+        f"outside its training range. {measured} The Dijkstra path below stays exact "
+        "at any size and is the answer to trust here.",
+    )
+
+
+def node_positions(graph_data, half_width=300.0, half_height=250.0):
+    """Deterministic layout keyed only on the graph, never on the prediction.
+
+    Physics was previously left enabled, so every re-render (e.g. clicking Run
+    Inference) restarted the force simulation and the graph visibly rearranged.
+    Coordinates are normalised into a box the 600px canvas shows at zoom 1, since
+    pyvis never calls network.fit().
+    """
+    G = nx.Graph()
+    G.add_nodes_from(graph_data["node_ids"])
+    for u, v, _w in graph_data["edges"]:
+        G.add_edge(u, v)
+    pos = nx.spring_layout(G, seed=int(graph_data["seed"]) % (2**31))
+
+    xs = [p[0] for p in pos.values()]
+    ys = [p[1] for p in pos.values()]
+    scale = min(2 * half_width / (max(xs) - min(xs)),
+                2 * half_height / (max(ys) - min(ys)))
+    cx = (max(xs) + min(xs)) / 2
+    cy = (max(ys) + min(ys)) / 2
+    # y is negated: networkx grows upward, the browser canvas grows downward.
+    return {n: ((p[0] - cx) * scale, -(p[1] - cy) * scale) for n, p in pos.items()}
+
 
 def draw_graph(graph_data, prediction=None):
     if not graph_data:
         return ""
-        
+
     net = Network(height="600px", width="100%", bgcolor="#0a0a0a", font_color="#f5f5f5")
-    
-    # Physics settings for a smooth, stable layout
     net.set_options("""
     var options = {
-      "physics": {
-        "forceAtlas2Based": {
-          "gravitationalConstant": -100,
-          "centralGravity": 0.01,
-          "springLength": 100,
-          "springConstant": 0.08
-        },
-        "maxVelocity": 50,
-        "solver": "forceAtlas2Based",
-        "timestep": 0.35,
-        "stabilization": {"iterations": 150}
-      },
+      "physics": {"enabled": false},
+      "interaction": {"dragNodes": true, "zoomView": true},
       "edges": {
         "color": {"inherit": false},
         "smooth": {"type": "continuous"}
       }
     }
     """)
+
+    positions = node_positions(graph_data)
 
     source = graph_data.get("source")
     target = graph_data.get("target")
@@ -143,6 +215,8 @@ def draw_graph(graph_data, prediction=None):
             node_id, 
             label=str(node_id),
             title=title,
+            x=positions[node_id][0],
+            y=positions[node_id][1],
             color={"background": color, "border": border_color},
             borderWidth=3 if (is_src or is_tgt or is_path) else 1,
             size=size,
@@ -167,16 +241,10 @@ def draw_graph(graph_data, prediction=None):
             font={"color": "rgba(255,255,255,0.5)", "size": 10, "align": "middle"}
         )
         
-    try:
-        path = "graph.html"
-        net.save_graph(path)
-        with open(path, "r", encoding="utf-8") as f:
-            html = f.read()
-        # Clean up the generated file to avoid littering
-        os.remove(path)
-        return html
-    except Exception as e:
-        return ""
+    # In-memory: writing to a fixed "graph.html" in the CWD instead would race
+    # between concurrent browser sessions, and the old code swallowed every
+    # failure into a blank panel.
+    return net.generate_html()
 
 
 # Initialize session state
@@ -184,6 +252,19 @@ if "graph_data" not in st.session_state:
     st.session_state.graph_data = None
 if "prediction" not in st.session_state:
     st.session_state.prediction = None
+if "api_error" not in st.session_state:
+    st.session_state.api_error = None
+if "seed_display" not in st.session_state:
+    st.session_state.seed_display = ""
+
+# The first graph has to exist before the Controls column renders, otherwise the
+# Start/Target selectboxes have no options and never appear on load.
+if st.session_state.graph_data is None:
+    _gd, _err = generate_graph(12)
+    st.session_state.graph_data = _gd
+    st.session_state.api_error = _err
+    if _gd:
+        st.session_state.seed_display = str(_gd["seed"])
 
 # --- HERO SECTION ---
 st.markdown('<div class="hero-title">GRAPH TRANSFORMER</div>', unsafe_allow_html=True)
@@ -201,47 +282,91 @@ st.markdown("<hr>", unsafe_allow_html=True)
 st.header("Interactive Graph Lab")
 st.markdown("Run inference in real-time against the trained checkpoint.")
 
+if st.session_state.api_error:
+    st.error(st.session_state.api_error)
+
 col1, col2 = st.columns([2, 1], gap="large")
 
 with col2:
     st.subheader("Controls")
-    import random
-    if st.button("Generate Random Graph", use_container_width=True):
-        st.session_state.graph_data = generate_graph(random.randint(5, 20))
-        st.session_state.prediction = None
 
-    if st.session_state.graph_data:
-        node_ids = st.session_state.graph_data["node_ids"]
-        source = st.selectbox("Start Node", node_ids, index=node_ids.index(st.session_state.graph_data["source"]))
-        target = st.selectbox("Target Node", node_ids, index=node_ids.index(st.session_state.graph_data["target"]))
-        
-        # Update graph_data if source/target changed
-        if source != st.session_state.graph_data["source"] or target != st.session_state.graph_data["target"]:
-            st.session_state.graph_data["source"] = source
-            st.session_state.graph_data["target"] = target
+    num_nodes = st.slider(
+        "Node count",
+        min_value=5,
+        max_value=50,
+        value=12,
+        key="num_nodes",
+        help=f"The model was trained on N={TRAIN_LO}\u2013{TRAIN_HI}. Larger graphs are "
+             "out of distribution and it fails on them; Dijkstra stays exact.",
+    )
+    seed_input = st.text_input(
+        "Seed",
+        value=st.session_state.seed_display,
+        key="seed_input",
+        placeholder="blank = random",
+    )
+
+    if st.button("Generate Graph", use_container_width=True):
+        raw = seed_input.strip()
+        try:
+            seed = int(raw) if raw else None
+        except ValueError:
+            st.session_state.api_error = f"Seed must be a whole number, got '{raw}'."
+        else:
+            gd, err = generate_graph(num_nodes, seed)
+            st.session_state.graph_data = gd
+            st.session_state.api_error = err
             st.session_state.prediction = None
-            
+            if gd:
+                st.session_state.seed_display = str(gd["seed"])
+
+    gd = st.session_state.graph_data
+    if gd:
+        st.caption(
+            f"N = {gd['num_nodes']}  \u2022  E = {len(gd['edges'])}  \u2022  seed = {gd['seed']}"
+        )
+
+        severity, label, detail = distribution_badge(gd["num_nodes"])
+        getattr(st, severity)(f"**{label}** \u2014 {detail}")
+
+        node_ids = gd["node_ids"]
+        for key, fallback in (("start_node", gd["source"]), ("target_node", gd["target"])):
+            if st.session_state.get(key) not in node_ids:
+                st.session_state[key] = fallback
+
+        source = st.selectbox("Start node", node_ids, key="start_node")
+        target = st.selectbox("Target node", node_ids, key="target_node")
+
+        if source != gd["source"] or target != gd["target"]:
+            gd["source"] = source
+            gd["target"] = target
+            st.session_state.prediction = None
+
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Run Transformer Inference", type="primary", use_container_width=True):
+        if source == target:
+            st.warning("Start and target are the same node. Pick two different nodes.")
+        elif st.button("Run Transformer Inference", type="primary", use_container_width=True):
             with st.spinner("Running inference..."):
-                st.session_state.prediction = predict_path(st.session_state.graph_data)
-                
+                pred, err = predict_path(gd)
+                st.session_state.prediction = pred
+                st.session_state.api_error = err
+
         if st.session_state.prediction:
             pred = st.session_state.prediction
             st.markdown("### Inference Results")
             model_path = pred.get("model_path", [])
             dijkstra_path = pred.get("dijkstra_path", [])
             raw_tokens = pred.get("model_raw_tokens", [])
-            
+
             st.markdown("**Transformer Raw Tokens**")
             st.code(" ".join(raw_tokens), language="text")
-            
+
             st.markdown("**Transformer Parsed Path**")
-            st.code(" → ".join(map(str, model_path)), language="text")
-            
-            st.markdown("**Dijkstra (Ground Truth)**")
-            st.code(" → ".join(map(str, dijkstra_path)), language="text")
-            
+            st.code(" \u2192 ".join(map(str, model_path)), language="text")
+
+            st.markdown(f"**Dijkstra (Ground Truth)** \u2014 cost {pred.get('dijkstra_cost')}")
+            st.code(" \u2192 ".join(map(str, dijkstra_path)), language="text")
+
             if pred.get("is_optimal"):
                 st.success("MATCH: Path is valid and optimal.")
             elif pred.get("valid_path"):
@@ -249,19 +374,16 @@ with col2:
             else:
                 st.error("INVALID: Model produced an invalid or incomplete path.")
     else:
-        st.info("Click 'Generate Random Graph' to start.")
+        st.info("No graph loaded. Fix the error above, then click 'Generate Graph'.")
 
 with col1:
-    if not st.session_state.graph_data:
-        # Load initial
-        import random
-        st.session_state.graph_data = generate_graph(random.randint(5, 20))
-        
-    html = draw_graph(st.session_state.graph_data, st.session_state.prediction)
-    if html:
-        components.html(html, height=620)
+    gd = st.session_state.graph_data
+    if gd:
+        components.html(draw_graph(gd, st.session_state.prediction), height=620)
     else:
-        st.warning("Ensure the FastAPI backend is running at http://127.0.0.1:8000")
+        st.warning(
+            f"No graph to draw. Ensure the FastAPI backend is running at {API_BASE}."
+        )
 
 
 st.markdown("<hr>", unsafe_allow_html=True)
