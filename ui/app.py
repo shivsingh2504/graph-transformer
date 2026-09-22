@@ -202,10 +202,9 @@ def draw_graph(graph_data, prediction=None):
         elif is_path:
             border_color = "#00f0ff"  # Cyan
             
-        # Optional: Add a glow shadow via Pyvis kwargs
-        shadow = False
-        if is_src or is_tgt or is_path:
-            shadow = {"enabled": True, "color": border_color, "size": 15, "x": 0, "y": 0}
+        # Always emit a shadow so the bounding box is consistent, preventing Pyvis auto-fit shifts.
+        shadow_color = border_color if (is_src or is_tgt or is_path) else "rgba(0,0,0,0)"
+        shadow = {"enabled": True, "color": shadow_color, "size": 15, "x": 0, "y": 0}
             
         title = f"Node {node_id}"
         if is_src: title += " (START)"
@@ -218,7 +217,7 @@ def draw_graph(graph_data, prediction=None):
             x=positions[node_id][0],
             y=positions[node_id][1],
             color={"background": color, "border": border_color},
-            borderWidth=3 if (is_src or is_tgt or is_path) else 1,
+            borderWidth=3,  # Constant width ensures Pyvis bounding box stays stable
             size=size,
             shadow=shadow,
             font={"color": "#fff" if is_path else "#a3a3a3"}
