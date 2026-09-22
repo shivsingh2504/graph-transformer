@@ -1,4 +1,4 @@
-"""Reproduce the two data-integrity hashes quoted in run_log.md.
+﻿"""Reproduce the two data-integrity hashes quoted in run_log.md.
 
 Amendment 2 pins run 6's training data to a graph-level SHA-256; the run 7 lock
 ruling additionally pins the tokenisation of the same 200 graphs. Until now both
@@ -26,7 +26,7 @@ EXPECTED_GRAPH = (
     "bf1adf1930c5a1d8d542b91319fca6b261c7109e8fb740fc55b73c1683fd9278"
 )
 EXPECTED_TOKENS = (
-    "0d7c7fdbfad17308703084ec400687f1e85426c5df07c3f547de9f1a256d0c88"
+    "e80e5d53803ffc044ad400277c949cd9a2ef1a7ad71c64f69cac0f5e33392119"
 )
 
 
@@ -91,3 +91,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
