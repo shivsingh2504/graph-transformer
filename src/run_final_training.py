@@ -36,6 +36,7 @@ class RunConfig:
     n_heads: int = 4
     d_ff: int = 512
     dropout: float = 0.0
+    lr_decay_start_epoch: int | None = None
 
 
 def _fingerprint(graph: Any) -> tuple:
@@ -93,6 +94,7 @@ def run(cfg: RunConfig, out_dir: Path) -> Dict[str, Any]:
         "grad_clip_norm": cfg.grad_clip_norm,
         "batch_size": cfg.batch_size,
         "n_epochs": cfg.n_epochs,
+        "lr_decay_start_epoch": cfg.lr_decay_start_epoch,
     }
     seeds: Dict[str, int] = {
         "train_seed": cfg.train_seed,
@@ -134,6 +136,7 @@ def run(cfg: RunConfig, out_dir: Path) -> Dict[str, Any]:
         dropout=cfg.dropout,
         device=device,
         on_epoch_end=_on_epoch_end,
+        lr_decay_start_epoch=cfg.lr_decay_start_epoch,
     )
     wall_time = time.time() - t_start
 

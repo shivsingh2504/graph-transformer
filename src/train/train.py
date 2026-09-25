@@ -38,6 +38,30 @@ def _linear_warmup_schedule(step: int, warmup_steps: int) -> float:
     return 1.0
 
 
+def _warmup_and_decay_schedule(
+    step: int,
+    warmup_steps: int,
+    decay_start_step: int,
+    total_steps: int,
+) -> float:
+    """
+    Combined warmup + decay schedule.
+    - Steps 0 to warmup_steps-1: linear warmup from 0 to 1
+    - Steps warmup_steps to decay_start_step-1: hold at 1.0
+    - Steps decay_start_step to total_steps-1: linear decay from 1.0 to 0.0
+    """
+    if step < warmup_steps:
+        return float(step + 1) / float(warmup_steps)
+    elif step < decay_start_step:
+        return 1.0
+    else:
+        decay_steps = total_steps - decay_start_step
+        if decay_steps <= 0:
+            return 0.0
+        progress = (step - decay_start_step) / decay_steps
+        return max(0.0, 1.0 - progress)
+
+
 # ---------------------------------------------------------------------------
 # PyTorch Dataset wrapper
 # ---------------------------------------------------------------------------
@@ -230,6 +254,7 @@ def train_model(
     grad_clip_norm: float = 1.0,
     device: torch.device | None = None,
     on_epoch_end: Optional[Callable[[int, nn.Module, Dict[str, List[float]]], None]] = None,
+    lr_decay_start_epoch: int | None = None,
 ) -> Tuple[Transformer, Dict[str, List[float]]]:
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -246,15 +271,31 @@ def train_model(
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=lr, weight_decay=weight_decay
     )
-    scheduler = LambdaLR(
-        optimizer,
-        lr_lambda=lambda step: _linear_warmup_schedule(step, warmup_steps),
-    )
     criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_token_id)
 
     train_loader = make_dataloader(
         train_split, tokenizer, batch_size=batch_size, shuffle=True
     )
+
+    # Build LR scheduler based on lr_decay_start_epoch
+    if lr_decay_start_epoch is None:
+        # Default: warmup only
+        scheduler = LambdaLR(
+            optimizer,
+            lr_lambda=lambda step: _linear_warmup_schedule(step, warmup_steps),
+        )
+    else:
+        # Warmup + decay
+        steps_per_epoch = len(train_loader)
+        decay_start_step = lr_decay_start_epoch * steps_per_epoch
+        total_steps = n_epochs * steps_per_epoch
+
+        scheduler = LambdaLR(
+            optimizer,
+            lr_lambda=lambda step: _warmup_and_decay_schedule(
+                step, warmup_steps, decay_start_step, total_steps
+            ),
+        )
     val_loader = make_dataloader(
         val_split, tokenizer, batch_size=batch_size, shuffle=False
     )
