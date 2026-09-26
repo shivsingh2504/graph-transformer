@@ -14,7 +14,7 @@ from data.tokenizer import GraphTokenizer
 from eval.evaluate import evaluate_example
 from model.model import Transformer
 
-CKPT_PATH = os.path.join(_HERE, "..", "checkpoints_run5", "final.pt")
+CKPT_PATH = os.path.join(_HERE, "..", "checkpoints_run8", "final.pt")
 
 
 def _bfs_min_hops(graph, source, target) -> int:
@@ -36,20 +36,19 @@ def _weight_sensitive(graph, sp) -> bool:
     return (len(sp.path) - 1) != _bfs_min_hops(graph, graph.source, graph.target)
 
 
-def print_waiver_note():
+def print_run_note():
     print("=" * 70)
-    print("M9 OOD EVALUATION -- checkpoints_run5\\final.pt")
+    print("M9 OOD EVALUATION -- checkpoints_run8\\final.pt")
     print("=" * 70)
-    print("WAIVER NOTE:")
-    print("Run 5 ID Eval Score: 83.6% (836/1000) valid_and_optimal.")
-    print("Gate (>=90%) waived by project owner so OOD evaluation can proceed.")
-    print("ID accuracy by size: 5-9: 95.1%, 10-14: 82.5%, 15-20: 75.7%.")
+    print("RUN 8 STATUS:")
+    print("Run 8 ID Eval Score: 91.1% (911/1000) valid_and_optimal.")
+    print("Gate (>=90%) PASSED -- no waiver needed.")
     print("=" * 70)
     print()
 
 
 def main():
-    print_waiver_note()
+    print_run_note()
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
@@ -85,8 +84,8 @@ def main():
             vo_count += 1
             
     print(f"Control ID eval valid_and_optimal: {vo_count}/1000 (in {time.time() - t0_ctrl:.1f}s)")
-    if vo_count != 836:
-        print(f"ERROR: Control step failed. Expected 836, got {vo_count}.")
+    if vo_count != 911:
+        print(f"ERROR: Control step failed. Expected 911, got {vo_count}.")
         sys.exit(1)
     print("Control step passed.\n")
     
