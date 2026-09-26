@@ -68,6 +68,7 @@ def _param_delta_norm(
 @pytest.fixture(scope="module")
 def t2_result():
     return run_experiment(
+        node_range=(5, 20),
         num_train_examples=8,
         num_eval_examples=4,
         n_epochs=2,
@@ -85,6 +86,7 @@ class TestSeedValidation:
     def test_raises_when_seeds_equal(self) -> None:
         with pytest.raises(ValueError, match="train_seed and eval_seed must differ"):
             run_experiment(
+                node_range=(5, 20),
                 num_train_examples=4,
                 num_eval_examples=4,
                 n_epochs=1,
@@ -95,6 +97,7 @@ class TestSeedValidation:
 
     def test_does_not_raise_when_seeds_differ(self) -> None:
         result = run_experiment(
+            node_range=(5, 20),
             num_train_examples=4,
             num_eval_examples=4,
             n_epochs=1,
@@ -152,6 +155,7 @@ class TestTinyEndToEnd:
     def test_fraction_in_unit_interval_and_example_count_correct(self) -> None:
         num_eval = 4
         result = run_experiment(
+            node_range=(5, 20),
             num_train_examples=8,
             num_eval_examples=num_eval,
             n_epochs=1,
@@ -171,6 +175,7 @@ class TestTinyEndToEnd:
     def test_losses_are_non_empty_and_finite(self) -> None:
         n_epochs = 2
         result = run_experiment(
+            node_range=(5, 20),
             num_train_examples=8,
             num_eval_examples=4,
             n_epochs=n_epochs,
@@ -227,6 +232,7 @@ class TestGateBoundary:
         )
 
         result = run_experiment(
+            node_range=(5, 20),
             num_train_examples=4,
             num_eval_examples=4,
             n_epochs=1,
@@ -308,6 +314,7 @@ class TestSplitSeedIsolation:
         monkeypatch.setattr(re_module, "generate_dataset_split", _spy)
 
         run_experiment(
+            node_range=(5, 20),
             num_train_examples=5,
             num_eval_examples=3,
             n_epochs=1,
@@ -406,6 +413,7 @@ class TestOnEpochEndPassthrough:
             calls.append(epoch)
 
         run_experiment(
+            node_range=(5, 20),
             num_train_examples=4,
             num_eval_examples=4,
             n_epochs=2,

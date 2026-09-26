@@ -5,7 +5,7 @@ import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import torch
 import torch.nn as nn
@@ -15,7 +15,6 @@ from data.tokenizer import GraphTokenizer
 from run_experiment import run_experiment
 from train.checkpoint import save_checkpoint
 
-_NODE_RANGE = (5, 20)
 _ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -26,6 +25,7 @@ class RunConfig:
     n_epochs: int = 30
     train_seed: int = 0
     eval_seed: int = 1
+    node_range: Tuple[int, int] = (5, 20)
     batch_size: int = 32
     lr: float = 5e-4
     weight_decay: float = 0.01
@@ -58,15 +58,15 @@ def run(cfg: RunConfig, out_dir: Path) -> Dict[str, Any]:
 
     torch.manual_seed(cfg.train_seed)
 
-    # Sanity-check splits — not used for training
+    # Sanity-check splits - not used for training
     _train_split = generate_dataset_split(
         num_examples=cfg.num_train_examples,
-        node_range=_NODE_RANGE,
+        node_range=cfg.node_range,
         base_seed=cfg.train_seed,
     )
     _eval_split = generate_dataset_split(
         num_examples=cfg.num_eval_examples,
-        node_range=_NODE_RANGE,
+        node_range=cfg.node_range,
         base_seed=cfg.eval_seed,
     )
     assert len(_train_split.examples) == cfg.num_train_examples
@@ -124,6 +124,7 @@ def run(cfg: RunConfig, out_dir: Path) -> Dict[str, Any]:
         n_epochs=cfg.n_epochs,
         train_seed=cfg.train_seed,
         eval_seed=cfg.eval_seed,
+        node_range=cfg.node_range,
         batch_size=cfg.batch_size,
         lr=cfg.lr,
         weight_decay=cfg.weight_decay,
