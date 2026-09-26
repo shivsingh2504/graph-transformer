@@ -1,7 +1,7 @@
 """Run 9: Node range extension (5-20 -> 5-30) with Run 8's LR schedule.
 
 Run 9 extends the training node range from (5, 20) to (5, 30):
-- Node range: (5, 30) — the key change
+- Node range: (5, 30) - the key change
 - Epochs: 60 (inherited from Run 8)
 - LR schedule: hold 5e-4 to epoch 40, decay to 0 by epoch 60 (inherited from Run 8)
 - All other hyperparameters: same as Run 8
