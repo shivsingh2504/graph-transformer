@@ -1,4 +1,4 @@
-﻿"""Run 9: Node range extension (5-20 → 5-30) with Run 8's LR schedule.
+"""Run 9: Node range extension (5-20 -> 5-30) with Run 8's LR schedule.
 
 Run 9 extends the training node range from (5, 20) to (5, 30):
 - Node range: (5, 30) — the key change
@@ -7,7 +7,7 @@ Run 9 extends the training node range from (5, 20) to (5, 30):
 - All other hyperparameters: same as Run 8
 
 Changes from Run 8:
-- Node range: (5, 20) → (5, 30)
+- Node range: (5, 20) -> (5, 30)
 - All other config identical to Run 8
 
 Run with:  python src/run_training_run9.py
