@@ -2,7 +2,7 @@ name: Build application containers
 
 on:
   push:
-    branches: [main]
+    branches: [main, run8]
   pull_request:
 
 jobs:

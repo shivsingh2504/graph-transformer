@@ -31,19 +31,21 @@ Choose a graph size from 5 through 20 and an optional whole-number seed, generat
 
 ## Hosting and CI
 
-`render.yaml` describes a private FastAPI service and a public Streamlit service on Render. The GitHub Actions workflow builds the container on pushes to `main` and pull requests. Render can deploy the Blueprint automatically after the services have been created and connected to the repository. See the [Render Blueprint reference](https://render.com/docs/blueprint-spec) for service configuration.
+`render.yaml` describes one free public Streamlit web service on Render. It runs the finalized FastAPI model API on loopback inside the same container, so the API itself is not exposed to the public internet. The GitHub Actions workflow builds the container on pushes to `main` and `run8`, and on pull requests. Render can deploy the Blueprint automatically after it is connected to the repository. See the [Render Blueprint reference](https://render.com/docs/blueprint-spec) for service configuration.
 
 ### Private checkpoint setup for Render
 
-The verified `checkpoints_run8/final.pt` is intentionally excluded from Git and Docker build contexts. The API image downloads it at startup from a private HTTPS artifact URL, verifies its state-dictionary SHA-256 against the verified Run 8 hash, and stores it on the API service's 1 GB persistent disk. The finalized `src/api.py` remains unchanged.
+The verified `checkpoints_run8/final.pt` is intentionally excluded from Git and Docker build contexts. At startup, the web service downloads it from the private HTTPS artifact URL in `CHECKPOINT_URL` and verifies its state-dictionary SHA-256 against the verified Run 8 hash. The finalized `src/api.py` remains unchanged.
+
+The no-cost Render setup has free-tier limits: the site can sleep after 15 minutes without traffic and take about a minute to wake, and the free filesystem is erased on sleep, restart, and redeploy. The checkpoint therefore downloads again after each wake or restart, and the private URL must still be valid then. Free services also use the workspace's monthly instance-hour, bandwidth, and build quotas; Render may suspend service or builds when included quotas are exhausted. See [Render's free service limits](https://render.com/docs/free).
 
 Before the first Render deploy:
 
 1. Upload `checkpoints_run8/final.pt` to private object storage that can provide a direct HTTPS download URL. Keep the object private; use a signed URL or equivalent read-only access.
-2. Create the Render Blueprint from `render.yaml`. If the API service already exists, add `CHECKPOINT_URL` manually in its Environment settings; Render only prompts for `sync: false` values during initial service creation.
-3. Set `CHECKPOINT_URL` to the private download URL. The bootstrap never prints the URL or stores it in the image. It downloads only when the persistent disk does not already contain the checkpoint.
+2. Create the Render Blueprint from `render.yaml` using the `run8` branch.
+3. When Render prompts for the unsynchronized `CHECKPOINT_URL` value, paste the private download URL directly into Render. The bootstrap never prints the URL or stores it in the image.
 
-The persistent disk preserves the checkpoint across restarts and deploys, so the download link is only needed again if the disk is removed. Render persistent disks add storage cost and disable zero-downtime deploys for the attached API service; see [Render's persistent disk documentation](https://render.com/docs/disks). Do not commit the checkpoint or its signed URL to Git.
+Do not commit the checkpoint or its signed URL to Git. If the URL expires, update the `CHECKPOINT_URL` secret in Render before the next restart or wake.
 
 ## Project notes
 
