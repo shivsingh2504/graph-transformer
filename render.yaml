@@ -1,0 +1,32 @@
+services:
+  - type: pserv
+    name: graph-transformer-api
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: /app/scripts/start_api.sh
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: CHECKPOINT_URL
+        sync: false
+    disk:
+      name: graph-transformer-checkpoint
+      mountPath: /app/checkpoints_run8
+      sizeGB: 1
+
+  - type: web
+    name: graph-transformer-ui
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: streamlit run ui/app.py --server.address=0.0.0.0 --server.port=$PORT --browser.gatherUsageStats=false
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: API_BASE_URL
+        fromService:
+          type: pserv
+          name: graph-transformer-api
+          property: hostport

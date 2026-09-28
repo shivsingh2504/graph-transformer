@@ -5,6 +5,9 @@ __pycache__/
 /data/
 checkpoints/
 checkpoints_*/
+!checkpoints_run8/
+checkpoints_run8/*
+!checkpoints_run8/results.txt
 *.pt
 *.pth
 run.log

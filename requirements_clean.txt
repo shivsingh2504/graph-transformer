@@ -1,0 +1,12 @@
+torch==2.13.0
+numpy==2.5.2
+networkx==3.6.1
+matplotlib==3.11.1
+streamlit
+fastapi
+uvicorn
+pydantic
+pyvis
+graphviz
+plotly
+pandas

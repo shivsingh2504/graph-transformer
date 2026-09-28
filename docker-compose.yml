@@ -1,0 +1,18 @@
+services:
+  api:
+    build: .
+    command: ["/app/scripts/start_api.sh"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./checkpoints_run8:/app/checkpoints_run8:ro
+
+  ui:
+    build: .
+    command: ["streamlit", "run", "ui/app.py", "--server.address=0.0.0.0", "--server.port=8501", "--browser.gatherUsageStats=false"]
+    environment:
+      API_BASE_URL: http://api:8000/api
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api

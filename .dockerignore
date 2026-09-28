@@ -1,0 +1,13 @@
+.git
+.venv
+__pycache__
+*.pyc
+tests
+diagnostics
+run*
+checkpoints_run*
+!checkpoints_run8/
+checkpoints_run8/*
+!checkpoints_run8/results.txt
+*.zip
+*.log
