@@ -14,8 +14,7 @@ COPY checkpoints_run8/results.txt ./checkpoints_run8/results.txt
 COPY scripts/ensure_checkpoint.py ./scripts/ensure_checkpoint.py
 COPY scripts/start_api.sh ./scripts/start_api.sh
 COPY scripts/start_render_free.sh ./scripts/start_render_free.sh
-COPY scripts/start_hf.sh ./scripts/start_hf.sh
-RUN chmod +x ./scripts/start_api.sh ./scripts/start_render_free.sh ./scripts/start_hf.sh
+RUN chmod +x ./scripts/start_api.sh ./scripts/start_render_free.sh
 
-EXPOSE 8000 8501 7860
-CMD ["/app/scripts/start_hf.sh"]
+EXPOSE 8000 8501
+CMD ["/app/scripts/start_render_free.sh"]
