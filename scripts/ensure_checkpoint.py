@@ -43,7 +43,12 @@ def download_checkpoint(destination: Path, url: str) -> None:
     if urlparse(url).scheme != "https":
         raise ValueError("CHECKPOINT_URL must be a private HTTPS download URL")
 
-    request = Request(url, headers={"User-Agent": "NexPath-checkpoint-bootstrap/1.0"})
+    request_headers = {"User-Agent": "NexPath-checkpoint-bootstrap/1.0"}
+    hf_token = os.environ.get("HF_TOKEN")
+    if hf_token and "huggingface.co" in url:
+        request_headers["Authorization"] = f"Bearer {hf_token.strip()}"
+
+    request = Request(url, headers=request_headers)
     temp_path: Path | None = None
     try:
         with urlopen(request, timeout=180) as response:

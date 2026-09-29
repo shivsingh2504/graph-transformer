@@ -35,7 +35,7 @@ def load_model():
     _DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Loading model on {_DEVICE}")
     
-    ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run5", "final.pt")
+    ckpt_path = os.path.join(os.path.dirname(__file__), "..", "checkpoints_run8", "final.pt")
         
     if not os.path.exists(ckpt_path):
         print(f"Warning: Model not found at {ckpt_path}. Endpoint prediction will fail.")

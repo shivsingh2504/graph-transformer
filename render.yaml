@@ -10,3 +10,5 @@ services:
     envVars:
       - key: CHECKPOINT_URL
         sync: false
+      - key: HF_TOKEN
+        sync: false
