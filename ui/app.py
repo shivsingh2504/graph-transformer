@@ -484,7 +484,7 @@ if "seed_display" not in st.session_state:
     st.session_state.seed_display = ""
 # --- HERO SECTION ---
 with st.container(border=True):
-    st.badge("GRAPH INTELLIGENCE · RESEARCH DEMO", color="blue")
+
     st.title("NexPath", icon=":material/hub:")
     st.markdown("### A Transformer is a neural network that uses attention to learn relationships across a sequence of information.")
     st.caption("NexPath turns a graph’s nodes, links, and costs into tokens. Its encoder reads the whole graph; its decoder predicts a route one node at a time.")
